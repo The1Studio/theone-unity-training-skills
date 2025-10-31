@@ -4,7 +4,14 @@ Claude Code skills for training Unity engineers at TheOne Studio. These skills e
 
 ## 📦 What's Included
 
-This repository contains 3 Claude Code skills designed to help Unity engineers write better code:
+This repository contains 3 Claude Code skills designed to help Unity engineers write better code, plus comprehensive training and contribution guides:
+
+### 📚 Documentation
+- **[TRAINING.md](TRAINING.md)** - Complete 3-week hands-on training program
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - How to contribute and improve skills
+- **GitHub Templates** - Issue and PR templates for contributions
+
+### 🎯 Skills
 
 ### 1. **theone-csharp-concise-coding**
 Enforces concise, idiomatic C# coding standards including:
@@ -249,9 +256,22 @@ public sealed class GameService : IInitializable, IDisposable
 
 **See:** [.claude/skills/theone-code-review.md](.claude/skills/theone-code-review.md)
 
-## 🎯 Training Workflows
+## 🎓 Training Program
 
-### For New Engineers
+**New to these skills?** Start with the comprehensive training program:
+
+👉 **[TRAINING.md](TRAINING.md)** - Complete 3-week hands-on training
+
+The training includes:
+- **Week 1:** C# Concise Coding (LINQ, modern features, extensions)
+- **Week 2:** Unity Architecture (VContainer, SignalBus, Controllers)
+- **Week 3:** Integration Patterns & Capstone Project
+- **Self-Assessment:** Certification criteria
+- **Hands-On Exercises:** Real-world scenarios with Claude Code
+
+### Quick Training Workflows
+
+#### For New Engineers
 
 ```bash
 # 1. Set up Claude Code with skills
@@ -408,35 +428,49 @@ When to use it
 
 ## 🤝 Contributing
 
-### Reporting Issues
+**Want to improve the skills?** We encourage all engineers to contribute!
 
-Found a problem or have a suggestion?
+👉 **[CONTRIBUTING.md](CONTRIBUTING.md)** - Complete contribution guide
 
-```bash
-# Create an issue on GitHub
-https://github.com/The1Studio/theone-unity-training-skills/issues
-```
-
-### Submitting Improvements
+### Quick Contribution Workflow
 
 ```bash
-# Fork the repository
-# Make your changes
-# Submit a pull request
+# 1. Fork or clone
+git clone https://github.com/The1Studio/theone-unity-training-skills.git
+cd theone-unity-training-skills
 
-# Or share improvements directly:
-# 1. Edit the skill file
-# 2. Share the updated version with the team
-# 3. Coordinate merging into main repository
+# 2. Create branch
+git checkout -b feature/improve-csharp-skill
+
+# 3. Make your changes
+nano .claude/skills/theone-csharp-concise-coding.md
+
+# 4. Test locally
+cp .claude/skills/*.md ~/.claude/skills/
+claude  # Test with Claude Code
+
+# 5. Submit PR
+git add .
+git commit -m "feat(skill): add more LINQ examples"
+git push origin feature/improve-csharp-skill
+gh pr create
 ```
 
-### Sharing Examples
+### Ways to Contribute
 
-Help improve skills by sharing examples:
-- Good code patterns you've discovered
-- Common mistakes to avoid
-- Unity-specific optimizations
-- Company-specific workflows
+- 🐛 **Fix errors** - Correct mistakes or outdated information
+- ✨ **Add examples** - Share real-world patterns from your code
+- 📚 **Improve clarity** - Make explanations easier to understand
+- 🆕 **Create skills** - Propose new skills for emerging patterns
+- 📝 **Update docs** - Improve README, TRAINING, or CONTRIBUTING
+
+### GitHub Templates
+
+We provide templates for:
+- **Skill Improvement Issues** - Suggest enhancements
+- **New Skill Proposals** - Propose new skills
+- **Bug Reports** - Report incorrect information
+- **Pull Requests** - Structured PR template with checklist
 
 ## 📋 Checklist for New Engineers
 
