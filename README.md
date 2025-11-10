@@ -32,19 +32,84 @@ claude
 # You should see: theone-unity-standards
 ```
 
+### Configure Project (Optional but Recommended)
+
+Add to your Unity project's `CLAUDE.md` to ensure the skill is used:
+
+```markdown
+# Project: [Your Unity Project Name]
+
+## Skills to Use
+
+When working with this Unity project, always use the `theone-unity-standards` skill for:
+- Writing C# code
+- Implementing Unity features
+- Reviewing code changes
+- Refactoring existing code
+
+This skill enforces:
+- Code quality first (nullable types, sealed classes, internal by default)
+- Modern C# patterns (LINQ, expression bodies, records)
+- Unity architecture (VContainer/SignalBus OR TheOne.DI/Publisher)
+- Performance best practices
+
+## Unity Standards
+
+Follow TheOne Studio standards:
+- VContainer + SignalBus (or TheOne.DI + Publisher)
+- Data Controllers only (never direct data access)
+- UniTask for async operations
+- TheOne.Logging for runtime (Debug.Log for editor only)
+```
+
+**Why add this?**
+- Ensures Claude always uses the skill for your Unity project
+- Provides context about your project's architecture
+- Makes standards explicit for all team members
+- Claude will automatically apply patterns when you ask it to implement features
+
 ## Usage
 
-Skills activate automatically when writing Unity C# code:
+### Automatic Activation
+
+The skill automatically triggers when Claude detects:
+- Unity C# code context (.cs files in Unity project)
+- Keywords: "implement", "refactor", "review", "Unity", "C#"
+- Architecture terms: "VContainer", "SignalBus", "DI", "event"
+- Requests for code generation or review
 
 ```bash
 cd /path/to/unity/project
 claude
 
-# Examples:
-"Implement a scoring system"                    # Auto-uses skill
-"Refactor this code"                            # Auto-applies patterns
-"Review my changes"                             # Auto-checks quality
+# Examples - skill auto-triggers:
+"Implement a scoring system"                    # ✓ Auto-uses skill
+"Refactor this code"                            # ✓ Auto-applies patterns
+"Review my changes"                             # ✓ Auto-checks quality
+"Add VContainer dependency injection"           # ✓ Auto-uses skill
 ```
+
+### Manual Activation
+
+If you want to explicitly use the skill:
+
+```bash
+# In Claude Code session:
+"Use the theone-unity-standards skill to implement this feature"
+"Apply theone-unity-standards patterns to this code"
+"Review this code using theone-unity-standards"
+```
+
+### How It Works
+
+1. **Skill Description** - Claude reads the skill's description which says:
+   > "Triggers when writing, reviewing, or refactoring Unity C# code, implementing features, setting up dependency injection, working with events, or reviewing code changes."
+
+2. **Project Context** - If your project has `CLAUDE.md` mentioning the skill, Claude will prioritize using it
+
+3. **Code Context** - When working with .cs files in Unity projects, the skill becomes relevant
+
+4. **Your Instructions** - When you mention Unity patterns, VContainer, SignalBus, etc.
 
 ## What It Enforces
 
