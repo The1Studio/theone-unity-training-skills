@@ -1,320 +1,249 @@
 # TheOne Studio Unity Training Skills
 
-Claude Code skill for Unity engineers at TheOne Studio. Enforces company standards for C# coding, Unity architecture, and code quality.
+⚠️ **Unity 6 (C# 9)** - Claude Code skill enforcing TheOne Studio Unity standards
 
 ## What's This?
 
-One unified skill that teaches Claude (and engineers) how to write Unity code the TheOne Studio way:
+One unified skill teaching Claude how to write Unity code following TheOne Studio standards:
+- **Code Quality First** (Priority 1) - Nullable types, sealed classes, exceptions over logging
+- **Modern C# Patterns** (Priority 2) - LINQ, expression bodies, records
+- **Unity Architecture** (Priority 3) - VContainer/SignalBus OR TheOne.DI/Publisher
+- **Performance** (Priority 4) - LINQ optimization, allocation prevention
 
-- **Code Quality First** - Nullable types, access modifiers, exceptions, logging
-- **Modern C# Patterns** - LINQ, expression bodies, null-coalescing, records
-- **Unity Architecture** - VContainer/SignalBus OR TheOne.DI/Publisher patterns
-- **Performance** - LINQ optimization, allocation prevention
+**For detailed patterns and examples**: See [SKILL.md](.claude/skills/theone-unity-standards/SKILL.md)
 
-## Quick Start
+---
 
-### Install
+## Installation Guide
+
+### Step 1: Install Skill Globally
 
 ```bash
 # Clone repository
 git clone https://github.com/The1Studio/theone-unity-training-skills.git
 
-# Copy skill globally
+# Copy skill to global Claude config
 mkdir -p ~/.claude/skills
 cp -r theone-unity-training-skills/.claude/skills/theone-unity-standards ~/.claude/skills/
 ```
 
-### Verify
+### Step 2: Verify Installation
 
 ```bash
 claude
-# Then ask: "What skills are available?"
-# You should see: theone-unity-standards
+# Ask: "What skills are available?"
+# Should see: theone-unity-standards
 ```
 
-### Configure Project (Optional but Recommended)
+### Step 3: Configure Your Unity Project (Recommended)
 
-Add to your Unity project's `CLAUDE.md` to ensure the skill is used:
+Create `CLAUDE.md` in your Unity project root:
 
 ```markdown
 # Project: [Your Unity Project Name]
 
-## Skills to Use
+## Development Standards
 
-When working with this Unity project, always use the `theone-unity-standards` skill for:
-- Writing C# code
-- Implementing Unity features
-- Reviewing code changes
-- Refactoring existing code
+Use `theone-unity-standards` skill for all C# code in this project.
 
-This skill enforces:
-- Code quality first (nullable types, sealed classes, internal by default)
-- Modern C# patterns (LINQ, expression bodies, records)
-- Unity architecture (VContainer/SignalBus OR TheOne.DI/Publisher)
-- Performance best practices
+**Architecture**:
+- DI: VContainer + SignalBus (or TheOne.DI + Publisher)
+- Data: Controllers only (never direct data access)
+- Async: UniTask (not coroutines)
+- Logging: TheOne.Logging (runtime), Debug.Log (editor only)
 
-## Unity Standards
-
-Follow TheOne Studio standards:
-- VContainer + SignalBus (or TheOne.DI + Publisher)
-- Data Controllers only (never direct data access)
-- UniTask for async operations
-- TheOne.Logging for runtime (Debug.Log for editor only)
+**Code Quality**:
+- `#nullable enable` in all files
+- All classes `sealed` unless designed for inheritance
+- All implementations `internal` (only API `public`)
+- Throw exceptions for errors (never log errors)
 ```
 
-**Why add this?**
-- Ensures Claude always uses the skill for your Unity project
-- Provides context about your project's architecture
-- Makes standards explicit for all team members
-- Claude will automatically apply patterns when you ask it to implement features
+---
 
-## Usage
+## Usage Guide
 
 ### Automatic Activation
 
-The skill automatically triggers when Claude detects:
-- Unity C# code context (.cs files in Unity project)
-- Keywords: "implement", "refactor", "review", "Unity", "C#"
-- Architecture terms: "VContainer", "SignalBus", "DI", "event"
-- Requests for code generation or review
-
-```bash
-cd /path/to/unity/project
-claude
-
-# Examples - skill auto-triggers:
-"Implement a scoring system"                    # ✓ Auto-uses skill
-"Refactor this code"                            # ✓ Auto-applies patterns
-"Review my changes"                             # ✓ Auto-checks quality
-"Add VContainer dependency injection"           # ✓ Auto-uses skill
-```
+Claude automatically uses the skill when:
+- Working with Unity C# code (`.cs` files)
+- Keywords: "implement", "refactor", "review", "Unity"
+- Architecture terms: "VContainer", "SignalBus", "DI", "controller"
+- Your project has `CLAUDE.md` mentioning the skill
 
 ### Manual Activation
 
-If you want to explicitly use the skill:
+Explicitly invoke the skill:
 
 ```bash
 # In Claude Code session:
-"Use the theone-unity-standards skill to implement this feature"
-"Apply theone-unity-standards patterns to this code"
-"Review this code using theone-unity-standards"
+"Use theone-unity-standards to implement this feature"
+"Apply theone-unity-standards patterns"
+"Review using theone-unity-standards"
 ```
 
-### How It Works
+---
 
-1. **Skill Description** - Claude reads the skill's description which says:
-   > "Triggers when writing, reviewing, or refactoring Unity C# code, implementing features, setting up dependency injection, working with events, or reviewing code changes."
+## What It Enforces (4 Priority Levels)
 
-2. **Project Context** - If your project has `CLAUDE.md` mentioning the skill, Claude will prioritize using it
+### 🔴 Priority 1: Code Quality (CHECK FIRST)
 
-3. **Code Context** - When working with .cs files in Unity projects, the skill becomes relevant
+10 mandatory rules enforced before any code:
 
-4. **Your Instructions** - When you mention Unity patterns, VContainer, SignalBus, etc.
+1. Enable nullable reference types (`#nullable enable`)
+2. Use least accessible access modifier (private by default)
+3. Fix ALL warnings (zero tolerance)
+4. Throw exceptions for errors (NEVER log errors)
+5. TheOne.Logging for runtime (Debug.Log = editor only)
+6. Use `readonly` for fields
+7. Use `const` for constants
+8. Use `nameof` for strings
+9. Using directive in deepest scope
+10. No inline comments
 
-## What It Enforces
+### 🟡 Priority 2: Modern C# Patterns
 
-### 🔴 Code Quality (Priority 1)
+- LINQ over loops
+- Expression-bodied members
+- Null-coalescing operators (`??`, `?.`, `??=`)
+- Pattern matching
+- Records for data
 
-```csharp
-#nullable enable
+### 🟢 Priority 3: Unity Architecture
 
-internal sealed class GameService  // internal by default, sealed
-{
-    private readonly ILogger logger;              // readonly
-    private const int MaxRetries = 3;             // const
-
-    [SerializeField] private Button btn = null!;  // null! for Unity
-
-    public GameService(ILogger logger)
-    {
-        ArgumentNullException.ThrowIfNull(logger, nameof(logger));  // nameof
-        this.logger = logger;
-    }
-
-    public Player GetPlayer(string id)
-    {
-        return players.TryGetValue(id, out var player)
-            ? player
-            : throw new KeyNotFoundException($"Player not found: {id}");  // throw, not log
-    }
-
-    private void Log()
-    {
-        this.logger.Info("Started");  // TheOne.Logging, not Debug.Log
-    }
-}
-```
-
-### 🟡 Modern C# (Priority 2)
-
-```csharp
-// ✅ LINQ instead of loops
-var activeEnemies = allEnemies.Where(e => e.IsActive).ToList();
-
-// ✅ Expression bodies
-public int Health => this.currentHealth;
-
-// ✅ Null-coalescing
-var name = playerName ?? "Unknown";
-
-// ✅ Pattern matching
-if (obj is Player player) player.TakeDamage(10);
-
-// ✅ Records for data
-public sealed record PlayerData(string Name, int Score);
-```
-
-### 🟢 Unity Architecture (Priority 3)
+**Choose ONE stack per project**:
 
 **Option 1: VContainer + SignalBus**
-```csharp
-public sealed class GameService : IInitializable, IDisposable
-{
-    private readonly SignalBus signalBus;
-    private readonly LevelDataController levelController;
-
-    [Preserve]
-    public GameService(SignalBus signalBus, LevelDataController levelController)
-    {
-        this.signalBus = signalBus;
-        this.levelController = levelController;
-    }
-
-    void IInitializable.Initialize()
-    {
-        this.signalBus.Subscribe<WonSignal>(this.OnWon);
-    }
-
-    void IDisposable.Dispose()
-    {
-        this.signalBus.TryUnsubscribe<WonSignal>(this.OnWon);
-    }
-}
-```
+- Constructor injection with `[Preserve]`
+- IInitializable/IDisposable lifecycle
+- SignalBus for events
 
 **Option 2: TheOne.DI + Publisher**
-```csharp
-public sealed class GameService : IAsyncEarlyLoadable, IDisposable
-{
-    private readonly IPublisher<WonSignal> publisher;
-    private IDisposable? subscription;
+- Constructor injection with `[Inject]`
+- IAsyncEarlyLoadable lifecycle
+- IPublisher/ISubscriber for events
 
-    [Inject]
-    public GameService(
-        IPublisher<WonSignal> publisher,
-        ISubscriber<WonSignal> subscriber)
-    {
-        this.publisher = publisher;
-        this.subscription = subscriber.Subscribe(this.OnWon);
-    }
-
-    public void Dispose()
-    {
-        this.subscription?.Dispose();
-    }
-}
-```
-
-**Universal Rules (Both Options)**:
-- ✅ Use Data Controllers (NEVER direct data access)
-- ✅ Use UniTask for async operations
+**Universal Rules (BOTH options)**:
+- ✅ Data Controllers only (NEVER direct data access)
+- ✅ UniTask for async (NOT coroutines)
 - ✅ Unload assets in Dispose
 - ✅ TheOne.Logging for runtime
 
-## Common Mistakes Prevented
+### 🔵 Priority 4: Performance
+
+- No allocations in Update/FixedUpdate
+- LINQ avoided in hot paths
+- `.ToArray()` instead of `.ToList()` when not modified
+
+---
+
+## Quick Reference
+
+### Class Types Decision Tree
+
+```
+Is this a MonoBehaviour?
+├─ YES → Unity component
+│   └─ Use: SerializeField, Unity lifecycle methods
+│
+└─ NO → Pure C# class (Service/System/Controller)
+    └─ Use: Constructor injection, no SerializeField
+```
+
+### Code Review Checklist
+
+**Before committing, verify**:
+
+🔴 **Code Quality**:
+- [ ] `#nullable enable` in all files
+- [ ] All classes `sealed`
+- [ ] All implementations `internal`
+- [ ] Zero compiler warnings
+- [ ] Exceptions thrown (no error logging)
+- [ ] TheOne.Logging used (runtime)
+
+🟡 **Modern C#**:
+- [ ] LINQ instead of loops
+- [ ] Expression bodies used
+- [ ] Null-coalescing operators used
+
+🟢 **Unity Architecture**:
+- [ ] VContainer or TheOne.DI used correctly
+- [ ] Data accessed through Controllers only
+- [ ] All events unsubscribed in Dispose
+- [ ] `[Preserve]` or `[Inject]` on constructors
+
+---
+
+## Documentation
+
+### Complete Reference (Detailed Patterns)
+- **Main Skill**: [SKILL.md](.claude/skills/theone-unity-standards/SKILL.md)
+- **C# Patterns**: [references/csharp/](https://github.com/The1Studio/theone-unity-training-skills/tree/master/.claude/skills/theone-unity-standards/references/csharp)
+- **Unity Architecture**: [references/unity/](https://github.com/The1Studio/theone-unity-training-skills/tree/master/.claude/skills/theone-unity-standards/references/unity)
+- **Code Review**: [references/review/](https://github.com/The1Studio/theone-unity-training-skills/tree/master/.claude/skills/theone-unity-standards/references/review)
+
+### Training & Contributing
+- **Training Program**: [TRAINING.md](TRAINING.md) - 3-week hands-on training
+- **Contributing Guide**: [CONTRIBUTING.md](CONTRIBUTING.md) - How to improve skills
+
+---
+
+## Common Mistakes
 
 ### ❌ DON'T
 
 ```csharp
 // Wrong: Nullable warnings ignored
-string? name;  // Warning not fixed
+string? name;  // Fix the warning!
 
-// Wrong: Logging errors instead of throwing
-Debug.Log("Error: Player not found");  // Should throw exception
+// Wrong: Logging errors
+Debug.Log("Error: Player not found");  // Throw exception!
 
-// Wrong: Debug.Log in runtime code
+// Wrong: Debug.Log in runtime
 public void Start() { Debug.Log("Started"); }  // Use TheOne.Logging
 
 // Wrong: Direct data access
-var level = DataManager.Instance.GetLevel(id);  // Use controller
+var level = DataManager.Instance.GetLevel(id);  // Use controller!
 
-// Wrong: Missing sealed
-public class GameService { }  // Should be sealed
-
-// Wrong: SerializeField without null!
-[SerializeField] private Button btn;  // With #nullable enable, needs null!
+// Wrong: Not sealed
+public class GameService { }  // Add sealed!
 ```
 
 ### ✅ DO
 
 ```csharp
+// Correct: All quality rules enforced
 #nullable enable
 
 internal sealed class GameService
 {
     private readonly ILogger logger;
-    private readonly LevelDataController levelController;  // Use controller
+    private readonly LevelDataController controller;
 
-    [SerializeField] private Button btn = null!;  // null! for Unity
-
-    public GameService(ILogger logger, LevelDataController levelController)
+    public GameService(ILogger logger, LevelDataController controller)
     {
-        ArgumentNullException.ThrowIfNull(logger, nameof(logger));
         this.logger = logger;
-        this.levelController = levelController;
+        this.controller = controller;
     }
 
     public Level GetLevel(string id)
     {
-        // Use controller, not direct access
-        return this.levelController.GetLevel(id)
+        return this.controller.GetLevel(id)
             ?? throw new KeyNotFoundException($"Level not found: {id}");
-    }
-
-    private void LogGameStart()
-    {
-        this.logger.Info("Game started");  // TheOne.Logging
     }
 }
 ```
 
-## Code Review Checklist
-
-Before committing:
-
-**🔴 Code Quality (CHECK FIRST)**:
-- [ ] `#nullable enable` in all files
-- [ ] All classes `sealed`
-- [ ] All implementations `internal` (only API `public`)
-- [ ] Zero compiler warnings
-- [ ] Exceptions thrown for errors (no logging)
-- [ ] TheOne.Logging (runtime) vs Debug.Log (editor only)
-- [ ] `readonly`/`const` used
-- [ ] `nameof()` for strings
-- [ ] `[SerializeField]` uses `null!`
-
-**🟡 Modern C#**:
-- [ ] LINQ instead of loops
-- [ ] Expression bodies where appropriate
-- [ ] Null-coalescing operators used
-
-**🟢 Unity Architecture**:
-- [ ] VContainer/TheOne.DI used correctly
-- [ ] Data accessed through Controllers only
-- [ ] All signals unsubscribed in Dispose
-- [ ] `[Preserve]` or `[Inject]` on constructors
-
-## Documentation
-
-- **Complete Reference**: [.claude/skills/theone-unity-standards/SKILL.md](.claude/skills/theone-unity-standards/SKILL.md)
-- **Training Program**: [TRAINING.md](TRAINING.md) - 3-week hands-on training
-- **Contributing**: [CONTRIBUTING.md](CONTRIBUTING.md) - How to improve skills
+---
 
 ## Support
 
-- Review skill files: `.claude/skills/theone-unity-standards/*.md`
-- Ask Claude: "Explain the theone-unity-standards patterns"
-- Create issues on GitHub for improvements
+- **Ask Claude**: "Explain theone-unity-standards patterns"
+- **Review Files**: `.claude/skills/theone-unity-standards/*.md`
+- **GitHub Issues**: [Report issues](https://github.com/The1Studio/theone-unity-training-skills/issues)
+
+---
 
 ## License
 
@@ -323,5 +252,5 @@ Internal use for TheOne Studio only.
 ---
 
 **Version**: 2.0.0 (Unified skill - code quality first priority)
-**Last Updated**: 2025-01-31
+**Last Updated**: 2025-11-10
 **Maintained by**: TheOne Studio Engineering Team
