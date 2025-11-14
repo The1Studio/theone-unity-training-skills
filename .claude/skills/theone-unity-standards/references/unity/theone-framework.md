@@ -9,7 +9,7 @@ Some TheOne Studio projects use an alternative framework stack instead of VConta
 - **IPublisher<T> / ISubscriber<T>** - Event messaging (instead of SignalBus)
 - **`[Inject]` attribute** - Constructor injection marker
 - **TheOne.Extensions** - Extension methods
-- **TheOne.Logging** - Logging (runtime), Debug.Log (editor only)
+- **TheOne.Logging.ILogger** - Logging (runtime, no guards, no prefixes, no constructor logs), Debug.Log (editor only)
 - **TheOne.ResourceManagement** - Asset loading/unloading
 - **TheOne.Data** - Player data (JSON), blueprints (CSV)
 - **TheOne.Pooling** - Object pooling

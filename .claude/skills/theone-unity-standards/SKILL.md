@@ -14,9 +14,9 @@ This skill enforces TheOne Studio's comprehensive Unity development standards wi
 **Priority 1: Code Quality & Hygiene** (MOST IMPORTANT)
 - Nullable reference types, access modifiers, fix all warnings
 - Throw exceptions (never log errors)
-- TheOne.Logging (runtime) vs Debug.Log (editor only)
+- TheOne.Logging.ILogger (runtime, no guards, no prefixes, no constructor logs) vs Debug.Log (editor only)
 - readonly/const, nameof, using directive scope
-- No inline comments
+- No inline comments (use descriptive names)
 
 **Priority 2: Modern C# Patterns**
 - LINQ over loops, extension methods, expression bodies
@@ -49,7 +49,7 @@ This skill enforces TheOne Studio's comprehensive Unity development standards wi
 |----------|------|-----------|
 | **🔴 PRIORITY 1: Code Quality (Check FIRST)** | | |
 | 1 | Nullable types, access modifiers, warnings, exceptions | [Quality & Hygiene](references/csharp/quality-hygiene.md) ⭐ |
-| 1 | TheOne.Logging vs Debug.Log, throw exceptions | [Quality & Hygiene](references/csharp/quality-hygiene.md) ⭐ |
+| 1 | TheOne.Logging.ILogger (no guards, no prefixes, no constructor logs) vs Debug.Log | [Quality & Hygiene](references/csharp/quality-hygiene.md) ⭐ |
 | 1 | readonly/const, nameof, using scope, no inline comments | [Quality & Hygiene](references/csharp/quality-hygiene.md) ⭐ |
 | **🟡 PRIORITY 2: Modern C# Patterns** | | |
 | 2 | LINQ, extension methods, var usage | [LINQ Patterns](references/csharp/linq-patterns.md) |
@@ -79,12 +79,12 @@ This skill enforces TheOne Studio's comprehensive Unity development standards wi
 2. **Use least accessible access modifier** - private by default
 3. **Fix ALL warnings** - Zero tolerance for compiler warnings
 4. **Throw exceptions for errors** - NEVER log errors, throw exceptions
-5. **TheOne.Logging for runtime** - Debug.Log ONLY for editor scripts
+5. **TheOne.Logging.ILogger for runtime** - No conditional guards (#if), no prefixes ([prefix]), NEVER in constructors; Debug.Log ONLY for editor scripts
 6. **Use readonly for fields** - Mark fields that aren't reassigned
 7. **Use const for constants** - Constants should be const, not readonly
 8. **Use nameof for strings** - Never hardcode property/parameter names
 9. **Using directive in deepest scope** - Method-level using when possible
-10. **No inline comments** - Code should be self-explanatory with good naming
+10. **No inline comments** - Use descriptive names; code should be self-explanatory
 
 **Example: Enforce Quality First**
 
@@ -92,29 +92,28 @@ This skill enforces TheOne Studio's comprehensive Unity development standards wi
 // ✅ EXCELLENT: All quality rules enforced
 #nullable enable // 1. Nullable enabled
 
-public sealed class PlayerService // 2. Least accessible (not public unless needed)
+public sealed class PlayerService
 {
-    private readonly ILogger logger; // 6. readonly
-    private const int MaxHealth = 100; // 7. const for constant
+    private readonly TheOne.Logging.ILogger logger;
+    private const int MaxHealth = 100;
 
-    public PlayerService(ILogger logger)
+    public PlayerService(TheOne.Logging.ILogger logger)
     {
-        ArgumentNullException.ThrowIfNull(logger, nameof(logger)); // 8. nameof
         this.logger = logger;
     }
 
     public Player GetPlayer(string id)
     {
-        using System.Text.Json; // 9. Using in deepest scope
+        using System.Text.Json;
 
         return players.TryGetValue(id, out var player)
             ? player
-            : throw new KeyNotFoundException($"Player not found: {id}"); // 4. Throw exception
+            : throw new KeyNotFoundException($"Player not found: {id}");
     }
 
-    private void LogGameStart()
+    private void LoadGameData()
     {
-        this.logger.Info("Game started"); // 5. TheOne.Logging for runtime
+        this.logger.Info("Game data loaded");
     }
 }
 
@@ -149,7 +148,7 @@ public class EditorTool
 - ✅ Use Data Controllers (NEVER direct data access)
 - ✅ Use UniTask for async operations
 - ✅ Unload assets in Dispose
-- ✅ TheOne.Logging for runtime, Debug.Log for editor only
+- ✅ TheOne.Logging.ILogger for runtime (no guards, no prefixes, no constructor logs), Debug.Log for editor only
 
 ## Brief Examples
 
@@ -159,23 +158,22 @@ public class EditorTool
 // ✅ EXCELLENT: Quality rules enforced
 #nullable enable
 
-public sealed class PlayerController // sealed, least accessible
+public sealed class PlayerController
 {
-    private readonly ILogger logger; // readonly
-    private const int MaxRetries = 3; // const
+    private readonly TheOne.Logging.ILogger logger;
+    private const int MaxRetries = 3;
 
-    public PlayerController(ILogger logger)
+    public PlayerController(TheOne.Logging.ILogger logger)
     {
-        ArgumentNullException.ThrowIfNull(logger, nameof(logger)); // nameof
         this.logger = logger;
     }
 
     public Player LoadPlayer(string id)
     {
         if (!File.Exists(id))
-            throw new FileNotFoundException($"Player file not found: {id}"); // Throw, not log
+            throw new FileNotFoundException($"Player file not found: {id}");
 
-        this.logger.Info($"Loading player {id}"); // TheOne.Logging for runtime
+        this.logger.Info($"Loading player {id}");
         return DeserializePlayer(id);
     }
 }
@@ -304,45 +302,51 @@ public sealed class GameService : IAsyncEarlyLoadable, IDisposable
 ### ❌ DON'T:
 1. **Ignore nullable warnings** → Enable #nullable and fix all warnings
 2. **Log errors instead of throwing** → Throw exceptions for errors
-3. **Use Debug.Log in runtime code** → Use TheOne.Logging (Debug.Log is editor only)
-4. **Skip access modifiers** → Always use least accessible (private default)
-5. **Hardcode strings** → Use nameof() for property/parameter names
-6. **Leave fields mutable** → Use readonly/const where possible
-7. **Use Zenject** → Use VContainer
-8. **Use MessagePipe directly** → Use SignalBus
-9. **Access data models directly** → Use Controllers
-10. **Use field injection** → Use constructor injection
-11. **Forget to unsubscribe from signals** → Implement IDisposable
-12. **Use struct signals** → Use class or record
-13. **Skip [Preserve] attribute** → Add to constructors
-14. **Use verbose loops** → Use LINQ
-15. **Allocate in hot paths** → Reuse collections
+3. **Use Debug.Log in runtime code** → Use TheOne.Logging.ILogger (Debug.Log is editor only)
+4. **Add conditional guards to logs** → ILogger handles #if internally
+5. **Add manual log prefixes** → ILogger handles [prefix] automatically
+6. **Log in constructors** → Never log in constructors (keep fast/side-effect free)
+7. **Use logger?.Method()** → Use logger.Method() (DI guarantees non-null)
+8. **Add verbose logs** → Keep only necessary logs
+9. **Skip access modifiers** → Always use least accessible (private default)
+10. **Hardcode strings** → Use nameof() for property/parameter names
+11. **Leave fields mutable** → Use readonly/const where possible
+12. **Use Zenject** → Use VContainer
+13. **Use MessagePipe directly** → Use SignalBus
+14. **Access data models directly** → Use Controllers
+15. **Forget to unsubscribe from signals** → Implement IDisposable
+16. **Add inline comments** → Use descriptive names instead
 
 ### ✅ DO:
 1. **Enable nullable reference types** (#nullable enable)
 2. **Throw exceptions for errors** (never log errors)
-3. **Use TheOne.Logging for runtime** (Debug.Log for editor only)
-4. **Use least accessible modifiers** (private by default)
-5. **Use nameof()** for string literals
-6. **Use readonly/const** for immutable fields
-7. **Use VContainer or TheOne.DI** for dependency injection
-8. **Use SignalBus or Publisher/Subscriber** for all events
-9. **Use Controllers** for all data access
-10. **Use constructor injection** only
-11. **Always implement IDisposable** and unsubscribe
-12. **Use class/record signals** for events
-13. **Add [Preserve] or [Inject]** to prevent code stripping
-14. **Use LINQ** for collection operations
-15. **Reuse collections** in hot paths
+3. **Use TheOne.Logging.ILogger for runtime** (no guards, no prefixes, no constructor logs)
+4. **Use logger.Method() directly** (no null-conditional, DI guarantees non-null)
+5. **Debug.Log for editor only** (#if UNITY_EDITOR)
+6. **Use least accessible modifiers** (private by default)
+7. **Use descriptive names** (no inline comments)
+8. **Use nameof()** for string literals
+9. **Use readonly/const** for immutable fields
+10. **Use VContainer or TheOne.DI** for dependency injection
+11. **Use SignalBus or Publisher/Subscriber** for all events
+12. **Use Controllers** for all data access
+13. **Always implement IDisposable** and unsubscribe
+14. **Add [Preserve] or [Inject]** to prevent code stripping
+15. **Use LINQ** for collection operations
 
 ## Review Severity Levels
 
 ### 🔴 Critical (Must Fix)
 - **Nullable warnings not fixed** - Enable #nullable and fix all warnings
 - **Logging errors instead of throwing** - Use throw, not log for errors
-- **Debug.Log in runtime code** - Must use TheOne.Logging (Debug.Log = editor only)
+- **Debug.Log in runtime code** - Must use TheOne.Logging.ILogger (Debug.Log = editor only)
+- **Conditional guards on logs** - ILogger handles #if internally, remove guards
+- **Manual log prefixes** - ILogger handles [prefix] automatically, remove prefixes
+- **Logging in constructors** - Never log in constructors (keep fast/side-effect free)
+- **Null-conditional on logger** - Use logger.Method() not logger?.Method()
 - **Missing access modifiers** - All members must have explicit modifiers
 - **Compiler warnings ignored** - Zero tolerance for warnings
+- **Inline comments** - Use descriptive names instead
 - Using Zenject instead of VContainer
 - Using MessagePipe instead of SignalBus
 - Direct data access (not using Controllers)
@@ -353,8 +357,9 @@ public sealed class GameService : IAsyncEarlyLoadable, IDisposable
 - **Missing readonly/const** - Fields should be readonly/const when possible
 - **Hardcoded strings** - Use nameof() for property/parameter names
 - **Using directives not in deepest scope** - Method-level using when possible
+- **Verbose unnecessary logs** - Keep only necessary logs
 - Verbose code instead of LINQ
-- Missing [Preserve] attribute
+- Missing [Preserve] or [Inject] attribute
 - Performance issues in hot paths
 - Missing unit tests for business logic
 - No XML documentation on public APIs

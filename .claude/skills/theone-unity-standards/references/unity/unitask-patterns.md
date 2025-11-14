@@ -19,8 +19,8 @@ public async UniTask DoWorkAsync(CancellationToken cancellationToken)
 {
     await UniTask.WaitForSeconds(1f, cancellationToken: cancellationToken);
 
-    // Do work
-    Debug.Log("Work completed");
+    var workResult = await this.ProcessDataAsync(cancellationToken);
+    return workResult;
 }
 ```
 

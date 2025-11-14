@@ -46,24 +46,43 @@ private readonly string name = string.Empty;
 **Critical Rule**: Throw exceptions instead of logging errors or returning defaults.
 
 **Logging Guidelines:**
-- **TheOne.Logging**: Use for runtime scripts (informational logs)
-- **Debug.Log**: Use ONLY for editor scripts
+- **TheOne.Logging.ILogger**: Use for runtime scripts (informational logs)
+  - ✅ ILogger handles conditional compilation internally (no #if guards needed)
+  - ✅ ILogger handles prefixes automatically (no [prefix] needed)
+  - ❌ NEVER log in constructors (keep constructors fast and side-effect free)
+  - ❌ Remove verbose logs (keep only necessary logs)
+  - ❌ No null-conditional operator (DI guarantees non-null: use `this.logger.Debug()` not `this.logger?.Debug()`)
+- **Debug.Log**: Use ONLY for editor scripts (#if UNITY_EDITOR)
 - **Exceptions**: Use for errors (never log errors - throw!)
 
 ```csharp
-// ✅ GOOD: Throw exceptions for errors
-public Player GetPlayer(string id)
+// ✅ EXCELLENT: TheOne.Logging.ILogger for runtime
+public sealed class GameService
 {
-    return players.TryGetValue(id, out var player)
-        ? player
-        : throw new KeyNotFoundException($"Player not found: {id}");
-}
+    private readonly TheOne.Logging.ILogger logger;
 
-// ✅ GOOD: TheOne.Logging for runtime informational logs
-public void StartGame()
-{
-    this.logger.Info("Game started"); // Informational - OK to log
-    this.LoadLevel(1);
+    public GameService(TheOne.Logging.ILogger logger)
+    {
+        this.logger = logger;
+    }
+
+    public Player GetPlayer(string id)
+    {
+        return players.TryGetValue(id, out var player)
+            ? player
+            : throw new KeyNotFoundException($"Player not found: {id}");
+    }
+
+    public void StartGame()
+    {
+        this.logger.Info("Game started");
+        this.LoadLevel(1);
+    }
+
+    private void ProcessGameData()
+    {
+        this.logger.Debug("Processing critical game data");
+    }
 }
 
 // ✅ GOOD: Debug.Log ONLY in editor scripts
@@ -72,18 +91,55 @@ public class EditorTool
 {
     public void ProcessAssets()
     {
-        Debug.Log("Processing assets..."); // Editor-only - OK
+        Debug.Log("Processing assets...");
     }
 }
 #endif
+
+// ❌ WRONG: Conditional compilation guards (ILogger handles this)
+public void StartGame()
+{
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    this.logger.Info("Game started");
+#endif
+}
+
+// ❌ WRONG: Manual prefixes (ILogger handles this)
+public void StartGame()
+{
+    this.logger.Info("[GameService] Game started");
+}
+
+// ❌ WRONG: Logging in constructor
+public GameService(TheOne.Logging.ILogger logger)
+{
+    this.logger = logger;
+    this.logger.Info("GameService created");
+}
+
+// ❌ WRONG: Null-conditional operator (DI guarantees non-null)
+public void StartGame()
+{
+    this.logger?.Info("Game started");
+}
+
+// ❌ WRONG: Verbose unnecessary logs
+public void ProcessItem(Item item)
+{
+    this.logger.Debug("Entering ProcessItem");
+    this.logger.Debug($"Item: {item}");
+    var result = item.Calculate();
+    this.logger.Debug($"Result: {result}");
+    return result;
+}
 
 // ❌ WRONG: Return default or log errors
 public Player GetPlayer(string id)
 {
     if (!players.TryGetValue(id, out var player))
     {
-        Debug.LogError("Player not found"); // WRONG - throw exception instead
-        return null; // WRONG - don't return default for errors
+        this.logger.Error("Player not found");
+        return null;
     }
     return player;
 }
@@ -91,14 +147,16 @@ public Player GetPlayer(string id)
 // ❌ WRONG: Debug.Log in runtime code
 public void StartGame()
 {
-    Debug.Log("Game started"); // WRONG - use TheOne.Logging instead
+    Debug.Log("Game started");
 }
 ```
 
 **Why This Matters:**
 - **Exceptions**: Force callers to handle errors properly
-- **TheOne.Logging**: Structured logging for production
+- **TheOne.Logging.ILogger**: Structured logging for production with automatic prefix/guard handling
 - **Debug.Log**: Only for editor development, stripped from builds
+- **No Constructor Logging**: Constructors should be fast and side-effect free
+- **No Null Checks**: DI container guarantees non-null dependencies
 
 ## Use nameof Instead of String Literals
 
