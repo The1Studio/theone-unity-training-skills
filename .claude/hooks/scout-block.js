@@ -32,7 +32,7 @@ try {
   // Validate JSON structure (basic check)
   try {
     const data = JSON.parse(hookInput);
-    if (!data.tool_input || typeof data.tool_input.command !== 'string') {
+    if (!data.tool_input || typeof data.tool_input !== 'object') {
       console.error('ERROR: Invalid JSON structure');
       process.exit(2);
     }

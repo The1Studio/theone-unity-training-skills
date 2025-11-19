@@ -56,6 +56,7 @@ Load: `references/output-standards.md`
 - Ensure self-contained plans with necessary context
 - Include code snippets/pseudocode when clarifying
 - Provide multiple options with trade-offs when appropriate
+- Fully respect the `./docs/development-rules.md` file.
 
 **Plan Directory Structure**
 ```

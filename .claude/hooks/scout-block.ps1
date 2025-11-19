@@ -1,5 +1,6 @@
 # scout-block.ps1 - PowerShell implementation for blocking heavy directories
 # Blocks: node_modules, __pycache__, .git/, dist/, build/
+# Supports: Bash, Glob, Grep, Read tools
 
 # Read JSON input from stdin
 $inputJson = $input | Out-String
@@ -24,39 +25,24 @@ if (-not $hookData.tool_input) {
     exit 2
 }
 
-if (-not $hookData.tool_input.command) {
-    Write-Error "ERROR: Invalid JSON structure - missing command"
-    exit 2
-}
+# Extract tool input
+$toolInput = $hookData.tool_input
 
-# Extract command from hook input
-$command = $hookData.tool_input.command
+# Blocked pattern (regex) - matches directory names with or without slashes/spaces
+$blockedPattern = '(^|/|\s)node_modules(/|$|\s)|(^|/|\s)__pycache__(/|$|\s)|(^|/|\s)\.git(/|$|\s)|(^|/|\s)dist(/|$|\s)|(^|/|\s)build(/|$|\s)'
 
-# Validate command is string
-if ($command -isnot [string]) {
-    Write-Error "ERROR: Command must be string"
-    exit 2
-}
-
-# Validate command not empty
-if ([string]::IsNullOrWhiteSpace($command)) {
-    Write-Error "ERROR: Empty command"
-    exit 2
-}
-
-# Define blocked patterns (regex)
-$blockedPatterns = @(
-    'node_modules',
-    '__pycache__',
-    '\.git/',
-    'dist/',
-    'build/'
+# Check different tool parameter combinations
+$paramsToCheck = @(
+    $toolInput.command,      # Bash tool
+    $toolInput.file_path,    # Read, Edit, Write tools
+    $toolInput.path,         # Grep, Glob tools
+    $toolInput.pattern       # Glob, Grep tools
 )
 
-# Check if command matches any blocked pattern
-foreach ($pattern in $blockedPatterns) {
-    if ($command -match $pattern) {
-        Write-Error "ERROR: Blocked directory pattern"
+# Check if any parameter matches blocked pattern
+foreach ($param in $paramsToCheck) {
+    if ($param -and ($param -is [string]) -and ($param -match $blockedPattern)) {
+        Write-Error "ERROR: Blocked directory pattern (node_modules, __pycache__, .git/, dist/, build/)"
         exit 2
     }
 }

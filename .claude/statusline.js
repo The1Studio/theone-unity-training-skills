@@ -154,59 +154,74 @@ async function main() {
             }
         }
 
-        // ccusage integration
+        // Native Claude Code data integration
         let sessionText = '';
         let sessionPercent = 0;
         let costUSD = '';
-        let costPerHour = '';
-        let totalTokens = '';
+        let linesAdded = 0;
+        let linesRemoved = 0;
+        const billingMode = env.CLAUDE_BILLING_MODE || 'api';
 
-        try {
-            // Try npx first, then ccusage
-            let blocksOutput = exec('npx ccusage@latest blocks --json');
-            if (!blocksOutput) {
-                blocksOutput = exec('ccusage blocks --json');
-            }
+        // Extract native cost data from Claude Code
+        costUSD = data.cost?.total_cost_usd || '';
+        linesAdded = data.cost?.total_lines_added || 0;
+        linesRemoved = data.cost?.total_lines_removed || 0;
 
-            if (blocksOutput) {
-                const blocks = JSON.parse(blocksOutput);
-                const activeBlock = blocks.blocks?.find(b => b.isActive === true);
+        // Session timer - parse local transcript JSONL (zero external dependencies)
+        const transcriptPath = data.transcript_path;
 
-                if (activeBlock) {
-                    costUSD = activeBlock.costUSD || '';
-                    costPerHour = activeBlock.burnRate?.costPerHour || '';
-                    totalTokens = activeBlock.totalTokens || '';
+        if (transcriptPath) {
+            try {
+                const fs = require('fs');
+                if (fs.existsSync(transcriptPath)) {
+                    const content = fs.readFileSync(transcriptPath, 'utf8');
+                    const lines = content.split('\n').filter(l => l.trim());
 
-                    // Session time calculation
-                    const resetTimeStr = activeBlock.usageLimitResetTime || activeBlock.endTime;
-                    const startTimeStr = activeBlock.startTime;
+                    // Find first API call with usage data
+                    let firstApiCall = null;
+                    for (const line of lines) {
+                        try {
+                            const entry = JSON.parse(line);
+                            if (entry.usage && entry.timestamp) {
+                                firstApiCall = entry.timestamp;
+                                break;
+                            }
+                        } catch (e) {
+                            continue;
+                        }
+                    }
 
-                    if (resetTimeStr && startTimeStr) {
-                        const startSec = toEpoch(startTimeStr);
-                        const endSec = toEpoch(resetTimeStr);
+                    if (firstApiCall) {
+                        // Calculate 5-hour billing block (Anthropic windows)
+                        const now = new Date();
+                        const currentUtcHour = now.getUTCHours();
+                        const blockStart = Math.floor(currentUtcHour / 5) * 5;
+                        let blockEnd = blockStart + 5;
+
+                        // Handle day wraparound
+                        let blockEndDate = new Date(now);
+                        if (blockEnd >= 24) {
+                            blockEnd -= 24;
+                            blockEndDate.setUTCDate(blockEndDate.getUTCDate() + 1);
+                        }
+                        blockEndDate.setUTCHours(blockEnd, 0, 0, 0);
+
                         const nowSec = Math.floor(Date.now() / 1000);
+                        const blockEndSec = Math.floor(blockEndDate.getTime() / 1000);
+                        const remaining = blockEndSec - nowSec;
 
-                        let total = endSec - startSec;
-                        if (total < 1) total = 1;
-
-                        let elapsed = nowSec - startSec;
-                        if (elapsed < 0) elapsed = 0;
-                        if (elapsed > total) elapsed = total;
-
-                        sessionPercent = Math.floor(elapsed * 100 / total);
-                        let remaining = endSec - nowSec;
-                        if (remaining < 0) remaining = 0;
-
-                        const rh = Math.floor(remaining / 3600);
-                        const rm = Math.floor((remaining % 3600) / 60);
-                        const endHM = formatTimeHM(endSec);
-
-                        sessionText = `${rh}h ${rm}m until reset at ${endHM}`;
+                        if (remaining > 0 && remaining < 18000) {
+                            const rh = Math.floor(remaining / 3600);
+                            const rm = Math.floor((remaining % 3600) / 60);
+                            const blockEndLocal = formatTimeHM(blockEndSec);
+                            sessionText = `${rh}h ${rm}m until reset at ${blockEndLocal}`;
+                            sessionPercent = Math.floor((18000 - remaining) * 100 / 18000);
+                        }
                     }
                 }
+            } catch (err) {
+                // Silent fail - transcript not readable
             }
-        } catch (err) {
-            // Silent fail - ccusage not available or error
         }
 
         // Render statusline
@@ -234,20 +249,16 @@ async function main() {
             output += `  ⌛ ${sessionColorCode}${sessionText}${Reset}`;
         }
 
-        // Cost
-        if (costUSD && /^\d+(\.\d+)?$/.test(costUSD)) {
+        // Cost (only show for API billing mode)
+        if (billingMode === 'api' && costUSD && /^\d+(\.\d+)?$/.test(costUSD.toString())) {
             const costUSDNum = parseFloat(costUSD);
-            if (costPerHour && /^\d+(\.\d+)?$/.test(costPerHour)) {
-                const costPerHourNum = parseFloat(costPerHour);
-                output += `  💵 ${CostColor}$${costUSDNum.toFixed(2)} ($${costPerHourNum.toFixed(2)}/h)${Reset}`;
-            } else {
-                output += `  💵 ${CostColor}$${costUSDNum.toFixed(2)}${Reset}`;
-            }
+            output += `  💵 ${CostColor}$${costUSDNum.toFixed(4)}${Reset}`;
         }
 
-        // Tokens
-        if (totalTokens && /^\d+$/.test(totalTokens.toString())) {
-            output += `  📊 ${UsageColor}${totalTokens} tok${Reset}`;
+        // Lines changed
+        if ((linesAdded > 0 || linesRemoved > 0)) {
+            const linesColor = color('1;32');  // green
+            output += `  📝 ${linesColor}+${linesAdded} -${linesRemoved}${Reset}`;
         }
 
         console.log(output);

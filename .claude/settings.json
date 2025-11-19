@@ -8,11 +8,11 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Bash|Glob|Grep|Read|Edit|Write",
         "hooks": [
           {
             "type": "command",
-            "command":"node .claude/hooks/scout-block.js"
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/scout-block.js"
           }
         ]
       }

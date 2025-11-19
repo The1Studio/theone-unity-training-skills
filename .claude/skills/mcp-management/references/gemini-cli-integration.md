@@ -1,5 +1,19 @@
 # Gemini CLI Integration Guide
 
+## ⚠️ CRITICAL: Use Stdin Piping, NOT -p Flag
+
+The `-p` flag is **deprecated** and skips MCP server initialization, causing tools to be unavailable:
+
+```bash
+# ❌ WRONG - This skips MCP connections!
+gemini -y -m gemini-2.5-flash -p "Take a screenshot"
+
+# ✅ CORRECT - This initializes MCP servers
+echo "Take a screenshot" | gemini -y -m gemini-2.5-flash
+```
+
+**Why**: The `-p` flag runs in "quick mode" and bypasses MCP server connection initialization. Always use stdin piping (echo + pipe) to ensure MCP tools are available.
+
 ## Overview
 
 Gemini CLI provides automatic MCP tool discovery and execution via natural language prompts. This is the recommended primary method for executing MCP tools.
@@ -46,7 +60,8 @@ This prevents committing sensitive API keys and server configurations.
 ### Basic Syntax
 
 ```bash
-gemini [flags] -p "<prompt>"
+# IMPORTANT: Use stdin piping, NOT -p flag (deprecated, skips MCP init)
+echo "<prompt>" | gemini [flags]
 ```
 
 ### Essential Flags
@@ -56,33 +71,32 @@ gemini [flags] -p "<prompt>"
   - `gemini-2.5-flash` (fast, recommended for MCP)
   - `gemini-2.5-flash` (balanced)
   - `gemini-pro` (high quality)
-- `-p "<prompt>"`: Task description
 
 ### Examples
 
 **Screenshot Capture**:
 ```bash
-gemini -y -m gemini-2.5-flash -p "Take a screenshot of https://www.google.com.vn"
+echo "Take a screenshot of https://www.google.com.vn" | gemini -y -m gemini-2.5-flash
 ```
 
 **Memory Operations**:
 ```bash
-gemini -y -m gemini-2.5-flash -p "Remember that Alice is a React developer working on e-commerce projects"
+echo "Remember that Alice is a React developer working on e-commerce projects" | gemini -y -m gemini-2.5-flash
 ```
 
 **Web Research**:
 ```bash
-gemini -y -m gemini-2.5-flash -p "Search for latest Next.js 15 features and summarize the top 3"
+echo "Search for latest Next.js 15 features and summarize the top 3" | gemini -y -m gemini-2.5-flash
 ```
 
 **Multi-Tool Orchestration**:
 ```bash
-gemini -y -m gemini-2.5-flash -p "Search for Claude AI documentation, take a screenshot of the homepage, and save both to memory"
+echo "Search for Claude AI documentation, take a screenshot of the homepage, and save both to memory" | gemini -y -m gemini-2.5-flash
 ```
 
 **Browser Automation**:
 ```bash
-gemini -y -m gemini-2.5-flash -p "Navigate to https://example.com, click the signup button, and take a screenshot"
+echo "Navigate to https://example.com, click the signup button, and take a screenshot" | gemini -y -m gemini-2.5-flash
 ```
 
 ## How It Works
@@ -179,7 +193,7 @@ Should show symlink pointing to `.claude/.mcp.json`.
 ### Debug Mode
 
 ```bash
-gemini --debug -p "Take a screenshot"
+echo "Take a screenshot" | gemini --debug
 ```
 
 Shows detailed MCP communication logs.

@@ -1,6 +1,7 @@
 #!/bin/bash
 # scout-block.sh - Bash implementation for blocking heavy directories
 # Blocks: node_modules, __pycache__, .git/, dist/, build/
+# Supports: Bash, Glob, Grep, Read tools
 
 # Read stdin
 INPUT=$(cat)
@@ -11,16 +12,37 @@ if [ -z "$INPUT" ]; then
   exit 2
 fi
 
-# Parse JSON using Node.js (eliminates jq dependency) with error handling
-COMMAND=$(echo "$INPUT" | node -e "
+# Parse JSON and extract all relevant parameters using Node.js
+CHECK_RESULT=$(echo "$INPUT" | node -e "
 try {
   const input = require('fs').readFileSync(0, 'utf-8');
   const data = JSON.parse(input);
-  if (!data.tool_input || typeof data.tool_input.command !== 'string') {
+
+  if (!data.tool_input || typeof data.tool_input !== 'object') {
     console.error('ERROR: Invalid JSON structure');
     process.exit(2);
   }
-  console.log(data.tool_input.command);
+
+  const toolInput = data.tool_input;
+  const blocked = /(^|\/|\s)node_modules(\/|$|\s)|(^|\/|\s)__pycache__(\/|$|\s)|(^|\/|\s)\.git(\/|$|\s)|(^|\/|\s)dist(\/|$|\s)|(^|\/|\s)build(\/|$|\s)/;
+
+  // Check different tool parameter combinations
+  const checkParams = [
+    toolInput.command,      // Bash tool
+    toolInput.file_path,    // Read, Edit, Write tools
+    toolInput.path,         // Grep, Glob tools
+    toolInput.pattern       // Glob, Grep tools
+  ];
+
+  // Check if any parameter matches blocked pattern
+  for (const param of checkParams) {
+    if (param && typeof param === 'string' && blocked.test(param)) {
+      console.log('BLOCKED');
+      process.exit(0);
+    }
+  }
+
+  console.log('ALLOWED');
 } catch (error) {
   console.error('ERROR: JSON parse failed');
   process.exit(2);
@@ -32,18 +54,9 @@ if [ $? -ne 0 ]; then
   exit 2
 fi
 
-# Validate command not empty
-if [ -z "$COMMAND" ]; then
-  echo "ERROR: Empty command" >&2
-  exit 2
-fi
-
-# Blocked patterns (regex)
-BLOCKED="node_modules|__pycache__|\.git/|dist/|build/"
-
-# Check if command matches blocked pattern
-if echo "$COMMAND" | grep -qE "$BLOCKED"; then
-  echo "ERROR: Blocked directory pattern" >&2
+# Check result
+if [ "$CHECK_RESULT" = "BLOCKED" ]; then
+  echo "ERROR: Blocked directory pattern (node_modules, __pycache__, .git/, dist/, build/)" >&2
   exit 2
 fi
 

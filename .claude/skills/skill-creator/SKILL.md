@@ -55,7 +55,7 @@ Every skill consists of a required SKILL.md file and optional bundled resources:
   - Prefer nodejs or python scripts instead of bash script, because bash scripts are not well-supported on Windows.
   - If you're going to write python scripts, make sure you have `requirements.txt`
   - Make sure scripts respect `.env` file follow this order: `process.env` > `.claude/skills/${SKILL}/.env` > `.claude/skills/.env` > `.claude/.env` 
-  - Create `.env.example` file to show the required environment variables.
+  - Create `.env.example` files to show the required environment variables.
   - Always write tests for these scripts.
 
 **IMPORTANT:**
@@ -89,6 +89,7 @@ Executable code (Python/Bash/etc.) for tasks that require deterministic reliabil
 - Write tests for scripts.
 - Run tests and make sure it works, if tests fail, fix them and run tests again, repeat until tests pass.
 - Run scripts manually with some usecases to make sure it works.
+- Make sure scripts respect `.env` file follow this order: `process.env` > `.claude/skills/docs-seeker/.env` > `.claude/skills/.env` > `.claude/.env`
 
 ##### References (`references/`)
 
@@ -164,6 +165,9 @@ Example: When building a `big-query` skill to handle queries like "How many user
 2. A `references/schema.md` file documenting the table schemas would be helpful to store in the skill
 
 To establish the skill's contents, analyze each concrete example to create a list of the reusable resources to include: scripts, references, and assets.
+
+- Make sure scripts respect `.env` file follow this order: `process.env` > `.claude/skills/docs-seeker/.env` > `.claude/skills/.env` > `.claude/.env`
+- Make sure scripts have tests.
 
 ### Step 3: Initializing the Skill
 

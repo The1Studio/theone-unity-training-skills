@@ -157,6 +157,38 @@ Typical LLM context limits:
 - GPT-4: ~128K tokens
 - GPT-3.5: ~16K tokens
 
+### Token Count Optimization
+Understanding your codebase's token distribution is crucial for optimizing AI interactions. Use the --token-count-tree option to visualize token usage across your project:
+
+```bash
+repomix --token-count-tree
+```
+This displays a hierarchical view of your codebase with token counts:
+
+```
+🔢 Token Count Tree:
+────────────────────
+└── src/ (70,925 tokens)
+    ├── cli/ (12,714 tokens)
+    │   ├── actions/ (7,546 tokens)
+    │   └── reporters/ (990 tokens)
+    └── core/ (41,600 tokens)
+        ├── file/ (10,098 tokens)
+        └── output/ (5,808 tokens)
+```
+You can also set a minimum token threshold to focus on larger files:
+
+```bash
+repomix --token-count-tree 1000  # Only show files/directories with 1000+ tokens
+```
+
+This helps you:
+
+- Identify token-heavy files that might exceed AI context limits
+- Optimize file selection using --include and --ignore patterns
+- Plan compression strategies by targeting the largest contributors
+- Balance content vs. context when preparing code for AI analysis
+
 ## Security Considerations
 
 Repomix uses Secretlint to detect sensitive data (API keys, passwords, credentials, private keys, AWS secrets).

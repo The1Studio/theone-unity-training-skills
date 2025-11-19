@@ -6,7 +6,7 @@ argument-hint: [tasks]
 Think hard to plan & start working on these tasks follow the Orchestration Protocol, Core Responsibilities, Subagents Team and Development Rules: 
 <tasks>$ARGUMENTS</tasks>
 
-**IMPORTANT**: Activate `aesthetic` skills.
+**IMPORTANT**: Activate `aesthetic` and `frontend-design` skills.
 **IMPORTANT**: Analyze the list of skills  at `.claude/skills/*` and intelligently activate the skills that are needed for the task during the process.
 **Ensure token efficiency while maintaining high quality.**
 

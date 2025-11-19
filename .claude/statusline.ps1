@@ -269,7 +269,13 @@ try {
             }
         }
     }
-# Directory
+}
+catch {
+    # Silent fail - ccusage not available
+}
+
+# Render statusline
+$output = ""
 $output += "📁 ${DirColor}${currentDir}${Reset}"
 
 # Git branch

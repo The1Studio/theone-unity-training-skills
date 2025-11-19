@@ -13,17 +13,24 @@
 ### Essential Documentation Review
 ALWAYS read these files first:
 
-1. **`./docs/codebase-summary.md`**
+1. **`./docs/development-rules.md`** (IMPORTANT)
+   - File Name Conventions
+   - File Size Management
+   - Development rules and best practices
+   - Code quality standards
+   - Security guidelines
+
+2. **`./docs/codebase-summary.md`**
    - Project structure and current status
    - High-level architecture overview
    - Component relationships
 
-2. **`./docs/code-standards.md`**
+3. **`./docs/code-standards.md`**
    - Coding conventions and standards
    - Language-specific patterns
    - Naming conventions
 
-3. **`./docs/design-guidelines.md`** (if exists)
+4. **`./docs/design-guidelines.md`** (if exists)
    - Design system guidelines
    - Branding and UI/UX conventions
    - Component library usage

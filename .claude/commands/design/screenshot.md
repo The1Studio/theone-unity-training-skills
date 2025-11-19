@@ -6,7 +6,7 @@ argument-hint: [screenshot]
 Think hard to plan & start designing follow exactly this screenshot: 
 <screenshot>$ARGUMENTS</screenshot>
 
-**IMPORTANT**: Activate `aesthetic` skills.
+**IMPORTANT**: Activate `aesthetic` and `frontend-design` skills.
 **IMPORTANT**: Analyze the list of skills  at `.claude/skills/*` and intelligently activate the skills that are needed for the task during the process.
 **Ensure token efficiency while maintaining high quality.**
 

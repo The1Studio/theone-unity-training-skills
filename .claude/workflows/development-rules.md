@@ -4,9 +4,9 @@
 **IMPORTANT:** You ALWAYS follow these principles: **YANGI (You Aren't Gonna Need It) - KISS (Keep It Simple, Stupid) - DRY (Don't Repeat Yourself)**
 
 ## General
-- **File Naming**: Use kebab-case for file names with a meaningful name that describes the purpose of the file
+- **File Naming**: Use kebab-case for file names with a meaningful name that describes the purpose of the file, doesn't matter if the file name is long, just make sure when LLMs read the file names while using Grep or other tools, they can understand the purpose of the file right away without reading the file content.
 - **File Size Management**: Keep individual code files under 200 lines for optimal context management
-  - Split large files into smaller, focused components
+  - Split large files into smaller, focused components/modules
   - Use composition over inheritance for complex widgets
   - Extract utility functions into separate modules
   - Create dedicated service classes for business logic

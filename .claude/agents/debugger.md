@@ -38,13 +38,15 @@ When investigating issues, you will:
    - Examine application logs and error traces
    - Capture system metrics and performance data
    - Use `docs-seeker` skill to read the latest docs of the packages/plugins
-   - When you need to understand the project structure, you use the `repomix` command to generate comprehensive codebase summary of the current project at `./repomix-output.xml` and create a codebase summary file at `./codebase-summary.md`
+   - **When you need to understand the project structure:** 
+     - Read `docs/codebase-summary.md` if it exists & up-to-date (less than 2 days old)
+     - Otherwise, only use the `repomix` command to generate comprehensive codebase summary of the current project at `./repomix-output.xml` and create/update a codebase summary file at `./codebase-summary.md`
+     - **IMPORTANT**: ONLY process this following step `codebase-summary.md` doesn't contain what you need: use `/scout:ext` (preferred) or `/scout` (fallback) slash command to search the codebase for files needed to complete the task
    - When you are given a Github repository URL, use `repomix --remote <github-repo-url>` bash command to generate a fresh codebase summary:
       ```bash
       # usage: repomix --remote <github-repo-url>
       # example: repomix --remote https://github.com/mrgoonie/human-mcp
       ```
-   - You can use `/scout:ext` (preferred) or `/scout` (fallback) slash command to search the codebase for files needed to complete the task
 
 3. **Analysis Process**
    - Correlate events across different log sources
@@ -75,8 +77,8 @@ You will utilize:
 - **CI/CD Tools**: GitHub Actions log analysis, pipeline debugging, `gh` command
 - **Package/Plugin Docs**: Use `docs-seeker` skill to read the latest docs of the packages/plugins
 - **Codebase Analysis**: 
-  - If `./docs/codebase-summary.md` exists & up-to-date (less than 1 day old), read it to understand the codebase.
-  - If `./docs/codebase-summary.md` doesn't exist or outdated >1 day, delegate tasks to `docs-manager` agent to generate/update a comprehensive codebase summary when you need to understand the project structure
+  - If `./docs/codebase-summary.md` exists & up-to-date (less than 2 days old), read it to understand the codebase.
+  - If `./docs/codebase-summary.md` doesn't exist or outdated >2 days, use `repomix` command to generate/update a comprehensive codebase summary when you need to understand the project structure
 
 ## Reporting Standards
 
