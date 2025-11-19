@@ -2,6 +2,11 @@
 
 Complete hands-on training program for mastering TheOne Studio Unity patterns using Claude Code skills.
 
+> **📚 Multi-Team Training:** This is the Unity-specific training program. For other frameworks, see:
+> - **Cocos Creator Training** - Coming soon (playable ads optimization)
+> - **React Native Training** - Coming soon (mobile app patterns)
+> - **All Skills**: [README.md](./README.md)
+
 ## Training Overview
 
 This training program is designed to take Unity engineers from beginner to proficient in TheOne Studio's coding standards through hands-on exercises with Claude Code.

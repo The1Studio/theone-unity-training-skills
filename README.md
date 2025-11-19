@@ -1,93 +1,128 @@
-# TheOne Studio Unity Training Skills
+# TheOne Studio - Claude Code Training Skills
 
-⚠️ **Unity 6 (C# 9)** - Claude Code skill for TheOne Studio Unity development standards
+Multi-team repository for training Claude Code with TheOne Studio coding standards across different technology stacks.
 
-## About
+## Purpose
 
-One unified skill teaching Claude how to write Unity code following TheOne Studio standards with **code quality first** priority:
+Train Claude Code to write production-ready code following TheOne Studio best practices for each development team. These skills enforce code quality, architecture patterns, and framework-specific standards through PR reviews and development workflows.
 
-1. **Code Quality** - Nullable types, sealed classes, internal by default, throw exceptions
-2. **Modern C#** - LINQ, expression bodies, records, pattern matching
-3. **Unity Architecture** - VContainer/SignalBus OR TheOne.DI/Publisher, Controllers only
-4. **Performance** - LINQ optimization, no allocations in hot paths
+## Available Skills
 
-## Setup
+| Skill | Team | Framework | Status | Documentation |
+|-------|------|-----------|--------|---------------|
+| `theone-unity-standards` | Unity Game Dev | Unity 6 (C# 9) | ✅ Production | [SKILL.md](./.claude/skills/theone-unity-standards/SKILL.md) |
+| `theone-cocos-standards` | Cocos Playable | Cocos Creator (TypeScript) | 🚧 Beta | [SKILL.md](./.claude/skills/theone-cocos-standards/SKILL.md) |
+| `theone-react-native-standards` | React Native | React Native (TypeScript) | 🚧 Beta | [SKILL.md](./.claude/skills/theone-react-native-standards/SKILL.md) |
 
-### 1. Install Skill
+**Legend:** ✅ Production | 🚧 Beta | 🔄 In Development
+
+## Quick Start
+
+### Installation
 
 ```bash
 # Clone repository
-git clone https://github.com/The1Studio/theone-unity-training-skills.git
+git clone https://github.com/The1Studio/theone-training-skills.git
 
-# Copy to global Claude config
+# Install specific skill globally
 mkdir -p ~/.claude/skills
-cp -r theone-unity-training-skills/.claude/skills/theone-unity-standards ~/.claude/skills/
+cp -r theone-training-skills/.claude/skills/theone-<framework>-standards ~/.claude/skills/
+
+# Or install all skills
+cp -r theone-training-skills/.claude/skills/theone-*-standards ~/.claude/skills/
 ```
 
-### 2. Verify
+### Verification
 
 ```bash
 claude
 # Ask: "What skills are available?"
-# Should see: theone-unity-standards
+# Should see: theone-unity-standards, theone-cocos-standards, theone-react-native-standards
 ```
 
-### 3. Configure Project (Recommended)
+### Project Configuration
 
-Create `CLAUDE.md` in your Unity project root:
+Create `CLAUDE.md` in your project root with the appropriate skill reference:
 
 ```markdown
-# Project: [Your Unity Project Name]
+# Project: [Your Project Name]
 
-Use `theone-unity-standards` skill for all C# code.
-
-**Standards**:
-- Architecture: VContainer + SignalBus (or TheOne.DI + Publisher)
-- Data: Controllers only (never direct access)
-- Async: UniTask (not coroutines)
-- Logging: TheOne.Logging (runtime), Debug.Log (editor only)
-- Code Quality: `#nullable enable`, sealed classes, internal by default
+Use `theone-[framework]-standards` skill for all code.
 ```
+
+See individual skill documentation for framework-specific configuration.
 
 ## Usage
 
-Claude automatically uses the skill when working with Unity C# code.
+Claude Code automatically activates skills based on project context. Manual activation:
 
-**Manual activation**: "Use theone-unity-standards to implement this feature"
-
-## What It Enforces
-
-### Code Quality (Priority 1)
-- `#nullable enable` in all files
-- All classes `sealed` unless designed for inheritance
-- All implementations `internal` (only API `public`)
-- Throw exceptions for errors (never log)
-- TheOne.Logging for runtime (Debug.Log for editor only)
-
-### Architecture (Priority 3)
-- VContainer + SignalBus OR TheOne.DI + Publisher
-- Data Controllers only (NEVER direct data access)
-- UniTask for async operations
-- Unsubscribe from all events in Dispose
-
-### Quick Decision
 ```
-Is this a MonoBehaviour?
-├─ YES → Use SerializeField, Unity lifecycle
-└─ NO  → Use constructor injection, no SerializeField
+"Use theone-unity-standards to implement this feature"
+"Use theone-cocos-standards to optimize playable performance"
+"Use theone-react-native-standards to refactor this component"
 ```
+
+## Skill Philosophy
+
+All skills follow a consistent 4-tier priority hierarchy:
+
+1. **🔴 Code Quality** - Nullable types, access modifiers, exceptions, logging patterns
+2. **🟡 Modern Language** - Framework-specific modern patterns and idioms
+3. **🟢 Architecture** - DI, state management, component patterns
+4. **🔵 Performance** - Optimization, review checklists
+
+Each skill adapts this philosophy to its framework while maintaining consistency.
+
+## Training Programs
+
+- **[Unity Training](./TRAINING.md)** - Complete 2-3 week program for Unity patterns
+- **Cocos Training** - Coming soon (playable ads optimization)
+- **React Native Training** - Coming soon (mobile app patterns)
 
 ## Documentation
 
-- **Complete Reference**: [SKILL.md](.claude/skills/theone-unity-standards/SKILL.md)
-- **Training Program**: [TRAINING.md](TRAINING.md)
-- **Contributing**: [CONTRIBUTING.md](CONTRIBUTING.md)
+### Unity Standards
+- [Complete Reference](./CLAUDE/skills/theone-unity-standards/SKILL.md)
+- [Training Program](./TRAINING.md)
+- Enforces: VContainer/SignalBus, Data Controllers, UniTask, TheOne.Logging
+
+### Cocos Creator Standards
+- [Complete Reference](./.claude/skills/theone-cocos-standards/SKILL.md)
+- Enforces: Component lifecycle, GPU skinning, <5MB playables, DrawCall batching
+
+### React Native Standards
+- [Complete Reference](./.claude/skills/theone-react-native-standards/SKILL.md)
+- Enforces: Functional components, Hooks, FlatList, Expo Router, Zustand/Jotai
+
+## Maintenance Workflow
+
+These skills are living documentation maintained through real-world usage:
+
+1. **Use in PR Reviews** - Reference skills when reviewing code
+2. **Gather Feedback** - Collect developer feedback from PR discussions
+3. **Iterate** - Update skills based on team experiences
+4. **Review** - Quarterly consistency reviews across all skills
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for:
+- Adding new skills
+- Updating existing skills
+- Proposing pattern changes
+- Reporting issues
 
 ## Support
 
-- Ask Claude: "Explain theone-unity-standards patterns"
-- GitHub Issues: [Report issues](https://github.com/The1Studio/theone-unity-training-skills/issues)
+- **Ask Claude**: "Explain theone-[framework]-standards patterns"
+- **GitHub Issues**: [Report issues](https://github.com/The1Studio/theone-training-skills/issues)
+- **Team Lead**: Contact your team lead for skill-specific questions
+
+## Version History
+
+- **3.0.0** (2025-11-19) - Multi-team ecosystem: Added Cocos Creator and React Native skills
+- **2.0.0** (2025-11-10) - Unity skill refinements and logging guidelines
+- **1.0.0** (2025-11-01) - Initial Unity standards skill
 
 ---
 
-**Version**: 2.0.0 | **Updated**: 2025-11-10 | **TheOne Studio Engineering Team**
+**TheOne Studio Engineering Team** | Maintained by developers, for developers
