@@ -1,7 +1,12 @@
 #!/bin/bash
 # scout-block.sh - Bash implementation for blocking heavy directories
 # Blocks: node_modules, __pycache__, .git/, dist/, build/
-# Supports: Bash, Glob, Grep, Read tools
+#
+# Blocking Rules:
+# - File paths: Blocks any file_path/path/pattern containing blocked directories
+# - Bash commands: Blocks directory access (cd, ls, cat, etc.) but ALLOWS build commands
+#   - Blocked: cd node_modules, ls build/, cat dist/file.js
+#   - Allowed: npm build, pnpm build, yarn build, npm run build
 
 # Read stdin
 INPUT=$(cat)
@@ -24,19 +29,32 @@ try {
   }
 
   const toolInput = data.tool_input;
-  const blocked = /(^|\/|\s)node_modules(\/|$|\s)|(^|\/|\s)__pycache__(\/|$|\s)|(^|\/|\s)\.git(\/|$|\s)|(^|\/|\s)dist(\/|$|\s)|(^|\/|\s)build(\/|$|\s)/;
 
-  // Check different tool parameter combinations
-  const checkParams = [
-    toolInput.command,      // Bash tool
+  // Pattern for directory paths (used for file_path, path, pattern)
+  const blockedDirPattern = /(^|\/|\s)node_modules(\/|$|\s)|(^|\/|\s)__pycache__(\/|$|\s)|(^|\/|\s)\.git(\/|$|\s)|(^|\/|\s)dist(\/|$|\s)|(^|\/|\s)build(\/|$|\s)/;
+
+  // Pattern for Bash commands - only block directory access, not build commands
+  // Blocks: cd node_modules, ls build/, cat dist/file.js
+  // Allows: npm build, pnpm build, yarn build, npm run build
+  const blockedBashPattern = /(cd\s+|ls\s+|cat\s+|rm\s+|cp\s+|mv\s+|find\s+)(node_modules|__pycache__|\.git|dist|build)(\/|$|\s)|(\s|^|\/)node_modules\/|(\s|^|\/)__pycache__\/|(\s|^|\/)\.git\/|(\s|^|\/)dist\/|(\s|^|\/)build\//;
+
+  // Check file path parameters (strict blocking)
+  const fileParams = [
     toolInput.file_path,    // Read, Edit, Write tools
     toolInput.path,         // Grep, Glob tools
     toolInput.pattern       // Glob, Grep tools
   ];
 
-  // Check if any parameter matches blocked pattern
-  for (const param of checkParams) {
-    if (param && typeof param === 'string' && blocked.test(param)) {
+  for (const param of fileParams) {
+    if (param && typeof param === 'string' && blockedDirPattern.test(param)) {
+      console.log('BLOCKED');
+      process.exit(0);
+    }
+  }
+
+  // Check Bash command (selective blocking - only directory access)
+  if (toolInput.command && typeof toolInput.command === 'string') {
+    if (blockedBashPattern.test(toolInput.command)) {
       console.log('BLOCKED');
       process.exit(0);
     }

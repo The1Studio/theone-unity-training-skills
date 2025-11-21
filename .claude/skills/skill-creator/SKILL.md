@@ -1,6 +1,6 @@
 ---
 name: skill-creator
-description: Guide for creating effective skills. This skill should be used when users want to create a new skill (or update an existing skill) that extends Claude's capabilities with specialized knowledge, workflows, or tool integrations.
+description: Guide for creating effective skills, adding skill references, skill scripts or optimizing existing skills. This skill should be used when users want to create a new skill (or update an existing skill) that extends Claude's capabilities with specialized knowledge, workflows, frameworks, libraries or plugins usage, or API and tool integrations.
 license: Complete terms in LICENSE.txt
 ---
 
@@ -14,6 +14,11 @@ Skills are modular, self-contained packages that extend Claude's capabilities by
 specialized knowledge, workflows, and tools. Think of them as "onboarding guides" for specific
 domains or tasks—they transform Claude from a general-purpose agent into a specialized agent
 equipped with procedural knowledge that no model can fully possess.
+
+**IMPORTANT:**
+- Skills are not documentation, they are practical instructions for Claude Code to use the tools, packages, plugins or APIs to achieve the tasks.
+- Each skill teaches Claude how to perform a specific development task, not what a tool does.
+- Claude Code can activate multiple skills automatically to achieve the user's request.
 
 ### What Skills Provide
 
@@ -61,7 +66,7 @@ Every skill consists of a required SKILL.md file and optional bundled resources:
 **IMPORTANT:**
 - Always keep in mind that `SKILL.md` and reference files should be token consumption efficient, so that **progressive disclosure** can be leveraged at best.
 - `SKILL.md` should be **less than 100 lines**
-- Referenced markdown file should be also **less than 100 lines**, remember that you can always split them into multiple files (**progressive disclosure** principle).
+- Referenced markdown files should be also **less than 100 lines**, remember that you can always split them into multiple files (**progressive disclosure** principle).
 - Referenced scripts: no limit on length, just make sure it works, no compile issues, no runtime issues, no dependencies issues, no environment issues, no platform issues.
 
 **Why?**
@@ -71,6 +76,7 @@ Better **context engineering**: leverage **progressive disclosure** technique of
 
 **File name:** `SKILL.md` (uppercase)
 **File size:** Under 100 lines, if you need more, plit it to multiple files in `references` folder.
+`SKILL.md` is always short and concise, straight to the point, treat it as a quick reference guide.
 
 **Metadata Quality:** The `name` and `description` in YAML frontmatter determine when Claude will use the skill. Be specific about what the skill does and when to use it. Use the third-person (e.g. "This skill should be used when..." instead of "Use this skill when...").
 
@@ -99,8 +105,13 @@ Documentation and reference material intended to be loaded as needed into contex
 - **Examples**: `references/finance.md` for financial schemas, `references/mnda.md` for company NDA template, `references/policies.md` for company policies, `references/api_docs.md` for API specifications
 - **Use cases**: Database schemas, API documentation, domain knowledge, company policies, detailed workflow guides
 - **Benefits**: Keeps SKILL.md lean, loaded only when Claude determines it's needed
-- **Best practice**: If files are large (>10k words), include grep search patterns in SKILL.md
+- **Best practice**: If files are large (>100 lines), include grep search patterns in SKILL.md
 - **Avoid duplication**: Information should live in either SKILL.md or references files, not both. Prefer references files for detailed information unless it's truly core to the skill—this keeps SKILL.md lean while making information discoverable without hogging the context window. Keep only essential procedural instructions and workflow guidance in SKILL.md; move detailed reference material, schemas, and examples to references files.
+
+**IMPORTANT:**
+- Referenced markdown files should be also **less than 100 lines**, remember that you can always split them into multiple files (**progressive disclosure** principle).
+- Referenced markdown files are practical instructions for Claude Code to use the tools, packages, plugins or APIs to achieve the tasks.
+- Each skill teaches Claude how to perform a specific development task, not what a tool does.
 
 ##### Assets (`assets/`)
 

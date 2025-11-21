@@ -5,6 +5,12 @@
  *
  * Blocks access to heavy directories: node_modules, __pycache__, .git/, dist/, build/
  *
+ * Blocking Rules:
+ * - File paths: Blocks any file_path/path/pattern containing blocked directories
+ * - Bash commands: Blocks directory access (cd, ls, cat, etc.) but ALLOWS build commands
+ *   - Blocked: cd node_modules, ls build/, cat dist/file.js
+ *   - Allowed: npm build, pnpm build, yarn build, npm run build
+ *
  * Platform Detection:
  * - Windows (win32): Uses PowerShell via scout-block.ps1
  * - Unix (linux/darwin): Uses Bash via scout-block.sh

@@ -477,3 +477,16 @@ def analyze_image_with_retry(image_path, prompt, max_retries=3):
 - Segmentation requires 2.5+ models
 - No video frame extraction (use video API)
 - Regional restrictions on child images (EEA, CH, UK)
+
+---
+
+## Related References
+
+**Current**: Image Understanding
+
+**Related Capabilities**:
+- [Image Generation](./image-generation.md) - Create and edit images
+- [Video Analysis](./video-analysis.md) - Analyze video frames
+- [Video Generation](./video-generation.md) - Reference images for video generation
+
+**Back to**: [AI Multimodal Skill](../SKILL.md)

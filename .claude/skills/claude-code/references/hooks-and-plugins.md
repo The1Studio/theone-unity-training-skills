@@ -6,6 +6,9 @@ Customize and extend Claude Code behavior with hooks and plugins.
 
 Hooks are shell commands that execute in response to events.
 
+### Detailed documentation
+https://code.claude.com/docs/en/hooks.md
+
 ### Hook Types
 
 **Pre-tool hooks**: Execute before tool calls

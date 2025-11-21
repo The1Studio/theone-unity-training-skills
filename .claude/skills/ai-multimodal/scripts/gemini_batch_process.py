@@ -20,6 +20,19 @@ from typing import List, Dict, Any, Optional
 import csv
 import shutil
 
+# Import centralized environment resolver
+sys.path.insert(0, str(Path.home() / '.claude' / 'scripts'))
+try:
+    from resolve_env import resolve_env
+    CENTRALIZED_RESOLVER_AVAILABLE = True
+except ImportError:
+    # Fallback if centralized resolver not available
+    CENTRALIZED_RESOLVER_AVAILABLE = False
+    try:
+        from dotenv import load_dotenv
+    except ImportError:
+        load_dotenv = None
+
 try:
     from google import genai
     from google.genai import types
@@ -28,59 +41,122 @@ except ImportError:
     print("Install with: pip install google-genai")
     sys.exit(1)
 
-try:
-    from dotenv import load_dotenv
-except ImportError:
-    load_dotenv = None
-
 
 def find_api_key() -> Optional[str]:
-    """Find Gemini API key using correct priority order.
+    """Find Gemini API key using centralized resolver or fallback.
+
+    Uses ~/.claude/scripts/resolve_env.py for consistent resolution across all skills.
+    Falls back to local resolution if centralized resolver not available.
 
     Priority order (highest to lowest):
     1. process.env (runtime environment variables)
-    2. .claude/skills/ai-multimodal/.env (skill-specific config)
-    3. .claude/skills/.env (shared skills config)
-    4. .claude/.env (Claude global config)
+    2. PROJECT/.claude/skills/ai-multimodal/.env (skill-specific)
+    3. PROJECT/.claude/skills/.env (shared skills)
+    4. PROJECT/.claude/.env (project global)
+    5. ~/.claude/skills/ai-multimodal/.env (user skill-specific)
+    6. ~/.claude/skills/.env (user shared)
+    7. ~/.claude/.env (user global)
     """
-    # Priority 1: Already in process.env (highest)
+    if CENTRALIZED_RESOLVER_AVAILABLE:
+        # Use centralized resolver (recommended)
+        return resolve_env('GEMINI_API_KEY', skill='ai-multimodal')
+
+    # Fallback: Local resolution (legacy)
     api_key = os.getenv('GEMINI_API_KEY')
     if api_key:
         return api_key
 
-    # Load .env files if dotenv available
     if load_dotenv:
-        # Determine base paths
         script_dir = Path(__file__).parent
-        skill_dir = script_dir.parent  # .claude/skills/ai-multimodal
-        skills_dir = skill_dir.parent   # .claude/skills
-        claude_dir = skills_dir.parent  # .claude
+        skill_dir = script_dir.parent
+        skills_dir = skill_dir.parent
+        claude_dir = skills_dir.parent
 
-        # Priority 2: Skill-specific .env
-        env_file = skill_dir / '.env'
-        if env_file.exists():
-            load_dotenv(env_file)
-            api_key = os.getenv('GEMINI_API_KEY')
-            if api_key:
-                return api_key
+        env_files = [
+            claude_dir / '.env',
+            skills_dir / '.env',
+            skill_dir / '.env',
+        ]
 
-        # Priority 3: Shared skills .env
-        env_file = skills_dir / '.env'
-        if env_file.exists():
-            load_dotenv(env_file)
-            api_key = os.getenv('GEMINI_API_KEY')
-            if api_key:
-                return api_key
+        for env_file in env_files:
+            if env_file.exists():
+                load_dotenv(env_file, override=True)
 
-        # Priority 4: Claude global .env
-        env_file = claude_dir / '.env'
-        if env_file.exists():
-            load_dotenv(env_file)
-            api_key = os.getenv('GEMINI_API_KEY')
-            if api_key:
-                return api_key
+        api_key = os.getenv('GEMINI_API_KEY')
+        if api_key:
+            return api_key
 
     return None
+
+
+def get_default_model(task: str) -> str:
+    """Get default model for task from environment or fallback.
+
+    Priority:
+    1. Environment variable for specific capability
+    2. Legacy GEMINI_MODEL variable
+    3. Hard-coded defaults
+    """
+    if task == 'generate':  # Image generation
+        model = os.getenv('IMAGE_GEN_MODEL')
+        if model:
+            return model
+        # Fallback to legacy
+        model = os.getenv('GEMINI_IMAGE_GEN_MODEL')
+        if model:
+            return model
+        return 'imagen-4.0-generate-001'  # New default
+
+    elif task == 'generate-video':
+        model = os.getenv('VIDEO_GEN_MODEL')
+        if model:
+            return model
+        return 'veo-3.1-generate-preview'  # New default
+
+    elif task in ['analyze', 'transcribe', 'extract']:
+        model = os.getenv('MULTIMODAL_MODEL')
+        if model:
+            return model
+        # Fallback to legacy
+        model = os.getenv('GEMINI_MODEL')
+        if model:
+            return model
+        return 'gemini-2.5-flash'  # Existing default
+
+    return 'gemini-2.5-flash'
+
+
+def validate_model_task_combination(model: str, task: str) -> None:
+    """Validate model is compatible with task.
+
+    Raises:
+        ValueError: If combination is invalid
+    """
+    # Video generation requires Veo
+    if task == 'generate-video':
+        if not model.startswith('veo-'):
+            raise ValueError(
+                f"Video generation requires Veo model, got '{model}'\n"
+                f"Valid models: veo-3.1-generate-preview, veo-3.1-fast-generate-preview, "
+                f"veo-3.0-generate-001, veo-3.0-fast-generate-001"
+            )
+
+    # Image generation models
+    if task == 'generate':
+        valid_image_models = [
+            'imagen-4.0-generate-001',
+            'imagen-4.0-ultra-generate-001',
+            'imagen-4.0-fast-generate-001',
+            'gemini-3-pro-image-preview',
+            'gemini-2.5-flash-image',  # Legacy
+        ]
+        if model not in valid_image_models:
+            # Allow gemini models for analysis-based generation (backward compat)
+            if not model.startswith('gemini-'):
+                raise ValueError(
+                    f"Image generation requires Imagen/Gemini image model, got '{model}'\n"
+                    f"Valid models: {', '.join(valid_image_models)}"
+                )
 
 
 def get_mime_type(file_path: str) -> str:
@@ -151,6 +227,191 @@ def upload_file(client: genai.Client, file_path: str, verbose: bool = False) -> 
         print(f"  Uploaded: {myfile.name}")
 
     return myfile
+
+
+def generate_image_imagen4(
+    client,
+    prompt: str,
+    model: str,
+    num_images: int = 1,
+    aspect_ratio: str = '1:1',
+    size: str = '1K',
+    verbose: bool = False
+) -> Dict[str, Any]:
+    """Generate image using Imagen 4 models."""
+    try:
+        # Build config based on model (Fast doesn't support imageSize)
+        config_params = {
+            'numberOfImages': num_images,
+            'aspectRatio': aspect_ratio
+        }
+
+        # Only Standard and Ultra support imageSize parameter
+        if 'fast' not in model.lower():
+            config_params['imageSize'] = size
+
+        gen_config = types.GenerateImagesConfig(**config_params)
+
+        if verbose:
+            print(f"  Generating with Imagen 4: {model}")
+            print(f"  Config: {num_images} images, {aspect_ratio}", end='')
+            if 'fast' not in model.lower():
+                print(f", {size}")
+            else:
+                print(" (Fast model - no size option)")
+
+        response = client.models.generate_images(
+            model=model,
+            prompt=prompt,
+            config=gen_config
+        )
+
+        # Save images
+        generated_files = []
+        for i, generated_image in enumerate(response.generated_images):
+            # Find project root
+            script_dir = Path(__file__).parent
+            project_root = script_dir
+            for parent in [script_dir] + list(script_dir.parents):
+                if (parent / '.git').exists() or (parent / '.claude').exists():
+                    project_root = parent
+                    break
+
+            output_dir = project_root / 'docs' / 'assets'
+            output_dir.mkdir(parents=True, exist_ok=True)
+            output_file = output_dir / f"imagen4_generated_{int(time.time())}_{i}.png"
+
+            with open(output_file, 'wb') as f:
+                f.write(generated_image.image.image_bytes)
+            generated_files.append(str(output_file))
+
+            if verbose:
+                print(f"  Saved: {output_file}")
+
+        return {
+            'status': 'success',
+            'generated_images': generated_files,
+            'model': model
+        }
+
+    except Exception as e:
+        if verbose:
+            print(f"  Error: {str(e)}")
+            import traceback
+            traceback.print_exc()
+        return {
+            'status': 'error',
+            'error': str(e)
+        }
+
+
+def generate_video_veo(
+    client,
+    prompt: str,
+    model: str,
+    resolution: str = '1080p',
+    aspect_ratio: str = '16:9',
+    reference_images: Optional[List[str]] = None,
+    verbose: bool = False
+) -> Dict[str, Any]:
+    """Generate video using Veo models."""
+    try:
+        # Build config with snake_case for Python SDK
+        config_params = {
+            'aspect_ratio': aspect_ratio,
+            'resolution': resolution
+        }
+
+        gen_config = types.GenerateVideosConfig(**config_params)
+
+        if verbose:
+            print(f"  Generating video with Veo: {model}")
+            print(f"  Config: {resolution}, {aspect_ratio}")
+            if reference_images:
+                print(f"  Reference images: {len(reference_images)}")
+
+        # Load reference images if provided
+        ref_images = None
+        if reference_images:
+            import PIL.Image
+            ref_images = []
+            for img_path in reference_images[:3]:  # Max 3
+                img = PIL.Image.open(img_path)
+                ref_images.append(types.VideoGenerationReferenceImage(
+                    image=img,
+                    reference_type='asset'
+                ))
+            gen_config.reference_images = ref_images
+
+        start = time.time()
+
+        if verbose:
+            print(f"  Starting video generation (this may take 11s-6min)...")
+
+        # Call generate_videos (plural) - returns an operation
+        operation = client.models.generate_videos(
+            model=model,
+            prompt=prompt,
+            config=gen_config
+        )
+
+        # Poll operation until complete
+        poll_count = 0
+        while not operation.done:
+            poll_count += 1
+            if verbose and poll_count % 3 == 0:  # Update every 30s
+                elapsed = time.time() - start
+                print(f"  Still generating... ({elapsed:.0f}s elapsed)")
+            time.sleep(10)
+            operation = client.operations.get(operation)
+
+        duration = time.time() - start
+
+        # Access generated video from operation response
+        generated_video = operation.response.generated_videos[0]
+
+        # Download the video file first
+        client.files.download(file=generated_video.video)
+
+        # Save video
+        script_dir = Path(__file__).parent
+        project_root = script_dir
+        for parent in [script_dir] + list(script_dir.parents):
+            if (parent / '.git').exists() or (parent / '.claude').exists():
+                project_root = parent
+                break
+
+        output_dir = project_root / 'docs' / 'assets'
+        output_dir.mkdir(parents=True, exist_ok=True)
+        output_file = output_dir / f"veo_generated_{int(time.time())}.mp4"
+
+        # Now save to file
+        generated_video.video.save(str(output_file))
+
+        file_size = output_file.stat().st_size / (1024 * 1024)  # MB
+
+        if verbose:
+            print(f"  Generated in {duration:.1f}s")
+            print(f"  File size: {file_size:.2f} MB")
+            print(f"  Saved: {output_file}")
+
+        return {
+            'status': 'success',
+            'generated_video': str(output_file),
+            'generation_time': duration,
+            'file_size_mb': file_size,
+            'model': model
+        }
+
+    except Exception as e:
+        if verbose:
+            print(f"  Error: {str(e)}")
+            import traceback
+            traceback.print_exc()
+        return {
+            'status': 'error',
+            'error': str(e)
+        }
 
 
 def process_file(
@@ -273,6 +534,10 @@ def batch_process(
     task: str,
     format_output: str,
     aspect_ratio: Optional[str] = None,
+    num_images: int = 1,
+    size: str = '1K',
+    resolution: str = '1080p',
+    reference_images: Optional[List[str]] = None,
     output_file: Optional[str] = None,
     verbose: bool = False,
     dry_run: bool = False
@@ -281,8 +546,11 @@ def batch_process(
     api_key = find_api_key()
     if not api_key:
         print("Error: GEMINI_API_KEY not found")
-        print("Set via: export GEMINI_API_KEY='your-key'")
-        print("Or create .env file with: GEMINI_API_KEY=your-key")
+        print("\nSetup options:")
+        print("1. Run setup checker: python scripts/check_setup.py")
+        print("2. Show hierarchy: python ~/.claude/scripts/resolve_env.py --show-hierarchy --skill ai-multimodal")
+        print("3. Quick setup: export GEMINI_API_KEY='your-key'")
+        print("4. Create .env: cd ~/.claude/skills/ai-multimodal && cp .env.example .env")
         sys.exit(1)
 
     if dry_run:
@@ -301,14 +569,47 @@ def batch_process(
         if verbose:
             print(f"\nGenerating image from prompt...")
 
-        result = process_file(
+        # Use Imagen 4 API for imagen models
+        if model.startswith('imagen-'):
+            result = generate_image_imagen4(
+                client=client,
+                prompt=prompt,
+                model=model,
+                num_images=num_images,
+                aspect_ratio=aspect_ratio or '1:1',
+                size=size,
+                verbose=verbose
+            )
+        else:
+            # Legacy Flash Image or other models
+            result = process_file(
+                client=client,
+                file_path=None,
+                prompt=prompt,
+                model=model,
+                task=task,
+                format_output=format_output,
+                aspect_ratio=aspect_ratio,
+                verbose=verbose
+            )
+
+        results.append(result)
+
+        if verbose:
+            status = result.get('status', 'unknown')
+            print(f"  Status: {status}")
+
+    elif task == 'generate-video' and not files:
+        if verbose:
+            print(f"\nGenerating video from prompt...")
+
+        result = generate_video_veo(
             client=client,
-            file_path=None,
             prompt=prompt,
             model=model,
-            task=task,
-            format_output=format_output,
-            aspect_ratio=aspect_ratio,
+            resolution=resolution,
+            aspect_ratio=aspect_ratio or '16:9',
+            reference_images=reference_images,
             verbose=verbose
         )
 
@@ -353,16 +654,42 @@ def save_results(results: List[Dict[str, Any]], output_file: str, format_output:
 
     # Special handling for image generation - if output has image extension, copy the generated image
     image_extensions = {'.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp'}
+    video_extensions = {'.mp4', '.mov', '.avi', '.webm'}
+
     if output_path.suffix.lower() in image_extensions and len(results) == 1:
+        # Ensure output directory exists
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Check for multiple generated images
+        generated_images = results[0].get('generated_images')
+        if generated_images:
+            # Copy first image to the specified output location
+            shutil.copy2(generated_images[0], output_path)
+            return
+
+        # Legacy single image field
         generated_image = results[0].get('generated_image')
         if generated_image:
-            # Copy the generated image to the specified output location
             shutil.copy2(generated_image, output_path)
             return
         else:
             # Don't write text reports to image files - save error as .txt instead
             output_path = output_path.with_suffix('.error.txt')
+            output_path.parent.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
             print(f"Warning: Generation failed, saving error report to: {output_path}")
+
+    if output_path.suffix.lower() in video_extensions and len(results) == 1:
+        # Ensure output directory exists
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        generated_video = results[0].get('generated_video')
+        if generated_video:
+            shutil.copy2(generated_video, output_path)
+            return
+        else:
+            output_path = output_path.with_suffix('.error.txt')
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            print(f"Warning: Video generation failed, saving error report to: {output_path}")
 
     if format_output == 'json':
         with open(output_path, 'w', encoding='utf-8') as f:
@@ -416,16 +743,29 @@ Examples:
 
     parser.add_argument('--files', nargs='*', help='Input files to process')
     parser.add_argument('--task', required=True,
-                       choices=['transcribe', 'analyze', 'extract', 'generate'],
+                       choices=['transcribe', 'analyze', 'extract', 'generate', 'generate-video'],
                        help='Task to perform')
     parser.add_argument('--prompt', help='Prompt for analysis/generation')
-    parser.add_argument('--model', default='gemini-2.5-flash',
-                       help='Gemini model to use (default: gemini-2.5-flash)')
+    parser.add_argument('--model',
+                       help='Model to use (default: auto-detected from task and env vars)')
     parser.add_argument('--format', dest='format_output', default='text',
                        choices=['text', 'json', 'csv', 'markdown'],
                        help='Output format (default: text)')
+
+    # Image generation options
     parser.add_argument('--aspect-ratio', choices=['1:1', '16:9', '9:16', '4:3', '3:4'],
-                       help='Aspect ratio for image generation')
+                       help='Aspect ratio for image/video generation')
+    parser.add_argument('--num-images', type=int, default=1,
+                       help='Number of images to generate (1-4, default: 1)')
+    parser.add_argument('--size', choices=['1K', '2K'], default='1K',
+                       help='Image size for Imagen 4 (default: 1K)')
+
+    # Video generation options
+    parser.add_argument('--resolution', choices=['720p', '1080p'], default='1080p',
+                       help='Video resolution (default: 1080p)')
+    parser.add_argument('--reference-images', nargs='+',
+                       help='Reference images for video generation (max 3)')
+
     parser.add_argument('--output', help='Output file for results')
     parser.add_argument('--verbose', '-v', action='store_true',
                        help='Verbose output')
@@ -434,14 +774,26 @@ Examples:
 
     args = parser.parse_args()
 
+    # Auto-detect model if not specified
+    if not args.model:
+        args.model = get_default_model(args.task)
+        if args.verbose:
+            print(f"Auto-detected model: {args.model}")
+
+    # Validate model/task combination
+    try:
+        validate_model_task_combination(args.model, args.task)
+    except ValueError as e:
+        parser.error(str(e))
+
     # Validate arguments
-    if args.task != 'generate' and not args.files:
+    if args.task not in ['generate', 'generate-video'] and not args.files:
         parser.error("--files required for non-generation tasks")
 
-    if args.task == 'generate' and not args.prompt:
-        parser.error("--prompt required for generation task")
+    if args.task in ['generate', 'generate-video'] and not args.prompt:
+        parser.error("--prompt required for generation tasks")
 
-    if args.task != 'generate' and not args.prompt:
+    if args.task not in ['generate', 'generate-video'] and not args.prompt:
         # Set default prompts
         if args.task == 'transcribe':
             args.prompt = 'Generate a transcript with timestamps'
@@ -459,6 +811,10 @@ Examples:
         task=args.task,
         format_output=args.format_output,
         aspect_ratio=args.aspect_ratio,
+        num_images=args.num_images,
+        size=args.size,
+        resolution=args.resolution,
+        reference_images=args.reference_images,
         output_file=args.output,
         verbose=args.verbose,
         dry_run=args.dry_run

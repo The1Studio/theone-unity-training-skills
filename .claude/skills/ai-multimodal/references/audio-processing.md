@@ -371,3 +371,16 @@ response = client.models.generate_content(
 - Files expire after 48 hours
 - No real-time streaming support
 - Non-speech audio less accurate than speech
+
+---
+
+## Related References
+
+**Current**: Audio Processing
+
+**Related Capabilities**:
+- [Video Analysis](./video-analysis.md) - Extract audio from videos
+- [Video Generation](./video-generation.md) - Generate videos with native audio
+- [Image Understanding](./vision-understanding.md) - Analyze audio with visual context
+
+**Back to**: [AI Multimodal Skill](../SKILL.md)

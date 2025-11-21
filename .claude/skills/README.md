@@ -21,6 +21,44 @@ The example skills in this repo are open source (Apache 2.0). We've also include
 
 **These skills are provided for demonstration and educational purposes only.** While some of these capabilities may be available in Claude, the implementations and behaviors you receive from Claude may differ from what is shown in these examples. These examples are meant to illustrate patterns and possibilities. Always test skills thoroughly in your own environment before relying on them for critical tasks.
 
+# Installation
+
+Some skills require external dependencies (FFmpeg, ImageMagick, Node.js packages, Python packages). Use our automated installation scripts to set up all dependencies:
+
+## Automated Installation (Recommended)
+
+**Linux/macOS:**
+```bash
+cd .claude/skills
+./install.sh
+```
+
+**Windows (PowerShell as Administrator):**
+```powershell
+cd .claude\skills
+.\install.ps1
+```
+
+The installation scripts will:
+- Install system tools (FFmpeg, ImageMagick)
+- Install Node.js packages (rmbg-cli, pnpm, wrangler, repomix)
+- Create Python virtual environment
+- Install Python packages (google-genai, pypdf, Pillow, etc.)
+- Install test dependencies
+- Verify all installations
+
+## Manual Installation
+
+For manual installation or troubleshooting, see [INSTALLATION.md](INSTALLATION.md) for detailed instructions.
+
+## What Gets Installed
+
+- **System Tools**: FFmpeg, ImageMagick
+- **Node.js Packages**: rmbg-cli, pnpm, wrangler, repomix
+- **Python Packages**: google-genai, pypdf, python-docx, Pillow, pytest
+
+See [INSTALLATION.md](INSTALLATION.md) for complete dependency list and platform-specific instructions.
+
 # Example Skills
 
 This repository includes a diverse collection of example skills demonstrating different capabilities:

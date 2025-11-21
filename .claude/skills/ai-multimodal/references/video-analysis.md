@@ -2,6 +2,8 @@
 
 Comprehensive guide for video understanding, temporal analysis, and YouTube processing using Gemini API.
 
+> **Note**: This guide covers video *analysis* (understanding existing videos). For video *generation* (creating new videos), see [Video Generation Reference](./video-generation.md).
+
 ## Core Capabilities
 
 - **Video Summarization**: Create concise summaries
@@ -20,10 +22,12 @@ Comprehensive guide for video understanding, temporal analysis, and YouTube proc
 
 ## Model Selection
 
-### Gemini 2.5 Series
+### Gemini 3 Series (Latest)
+- **gemini-3-pro-preview**: Latest, agentic workflows, 1M context, dynamic thinking
+
+### Gemini 2.5 Series (Recommended)
 - **gemini-2.5-pro**: Best quality, 1M-2M context
-- **gemini-2.5-flash**: Balanced, 1M-2M context
-- **gemini-2.5-flash-preview-09-2025**: Preview features, 1M context
+- **gemini-2.5-flash**: Balanced, 1M-2M context (recommended)
 
 ### Context Windows
 - **2M token models**: ~2 hours (default) or ~6 hours (low-res)
@@ -496,3 +500,16 @@ def upload_and_process_video(file_path, max_wait=300):
 - Processing time varies by video length
 - No real-time processing
 - Limited to 10 videos per request (2.5+)
+
+---
+
+## Related References
+
+**Current**: Video Analysis
+
+**Related Capabilities**:
+- [Video Generation](./video-generation.md) - Creating videos from text/images
+- [Audio Processing](./audio-processing.md) - Extract and analyze audio tracks
+- [Image Understanding](./vision-understanding.md) - Analyze individual frames
+
+**Back to**: [AI Multimodal Skill](../SKILL.md)

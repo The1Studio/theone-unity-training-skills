@@ -9,9 +9,20 @@ const { execSync } = require('child_process');
 const path = require('path');
 
 const testCases = [
+  // Directory access - should be BLOCKED
   {
-    name: 'Bash with node_modules',
+    name: 'Bash: ls node_modules',
     input: { tool_name: 'Bash', tool_input: { command: 'ls node_modules' } },
+    expected: 'BLOCKED'
+  },
+  {
+    name: 'Bash: cd build',
+    input: { tool_name: 'Bash', tool_input: { command: 'cd build' } },
+    expected: 'BLOCKED'
+  },
+  {
+    name: 'Bash: cat dist/bundle.js',
+    input: { tool_name: 'Bash', tool_input: { command: 'cat dist/bundle.js' } },
     expected: 'BLOCKED'
   },
   {
@@ -29,6 +40,35 @@ const testCases = [
     input: { tool_name: 'Read', tool_input: { file_path: 'node_modules/package.json' } },
     expected: 'BLOCKED'
   },
+
+  // Build commands - should be ALLOWED
+  {
+    name: 'Bash: npm build',
+    input: { tool_name: 'Bash', tool_input: { command: 'npm build' } },
+    expected: 'ALLOWED'
+  },
+  {
+    name: 'Bash: pnpm build',
+    input: { tool_name: 'Bash', tool_input: { command: 'pnpm build' } },
+    expected: 'ALLOWED'
+  },
+  {
+    name: 'Bash: yarn build',
+    input: { tool_name: 'Bash', tool_input: { command: 'yarn build' } },
+    expected: 'ALLOWED'
+  },
+  {
+    name: 'Bash: npm run build',
+    input: { tool_name: 'Bash', tool_input: { command: 'npm run build' } },
+    expected: 'ALLOWED'
+  },
+  {
+    name: 'Bash: pnpm --filter web run build',
+    input: { tool_name: 'Bash', tool_input: { command: 'pnpm --filter web run build 2>&1 | tail -100' } },
+    expected: 'ALLOWED'
+  },
+
+  // Safe operations - should be ALLOWED
   {
     name: 'Grep with safe path',
     input: { tool_name: 'Grep', tool_input: { pattern: 'test', path: 'src' } },

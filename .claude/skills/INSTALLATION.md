@@ -6,6 +6,77 @@ This guide explains how to install dependencies for Claude Code skills.
 
 Skills are organized into groups with Python utility scripts. Each skill's scripts directory contains a `requirements.txt` file listing dependencies.
 
+## Automated Installation (Recommended)
+
+Use the provided installation scripts for automated setup:
+
+### Linux/macOS
+
+```bash
+cd .claude/skills
+chmod +x install.sh
+./install.sh
+```
+
+The script will:
+- Detect your OS (Linux or macOS)
+- Install package managers (Homebrew for macOS, apt-get for Linux)
+- Install system dependencies (FFmpeg, ImageMagick)
+- Install Node.js and global packages (rmbg-cli, pnpm, wrangler, repomix)
+- Create Python virtual environment
+- Install Python packages for all skills
+- Install test dependencies
+- Verify all installations
+
+### Windows (PowerShell)
+
+Run as Administrator:
+
+```powershell
+cd .claude\skills
+Set-ExecutionPolicy Bypass -Scope Process -Force
+.\install.ps1
+```
+
+Options:
+```powershell
+# Skip Chocolatey installation if already installed
+.\install.ps1 -SkipChocolatey
+
+# Show help
+.\install.ps1 -Help
+```
+
+The script will:
+- Install Chocolatey package manager (if needed)
+- Install system dependencies (FFmpeg, ImageMagick)
+- Install Node.js and global packages
+- Create Python virtual environment
+- Install Python packages
+- Verify all installations
+
+### What Gets Installed
+
+**System Tools:**
+- FFmpeg (video/audio processing)
+- ImageMagick (image processing)
+
+**Node.js Packages (global):**
+- rmbg-cli (AI background removal)
+- pnpm (package manager)
+- wrangler (Cloudflare CLI)
+- repomix (repository packaging)
+
+**Python Packages:**
+- google-genai (Gemini API)
+- pypdf, python-docx (document processing)
+- Pillow (image processing)
+- pytest, pytest-cov (testing)
+
+## Manual Installation
+
+If you prefer manual installation or the automated script fails:
+
 ## Quick Start
 
 ### Option 1: Install All Dependencies (Recommended)
@@ -59,6 +130,8 @@ Several skills require external CLI tools:
   - Ubuntu/Debian: `sudo apt-get install imagemagick`
   - macOS: `brew install imagemagick`
   - Windows: `choco install imagemagick`
+- **RMBG CLI**: AI background removal
+  - All platforms: `npm install -g rmbg-cli`
 
 #### devops
 - **Cloudflare Wrangler**: `npm install -g wrangler`
@@ -101,7 +174,7 @@ sudo apt-get install -y ffmpeg imagemagick postgresql-client
 # Node.js and tools
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt-get install -y nodejs
-npm install -g pnpm wrangler repomix @shopify/cli
+npm install -g pnpm wrangler repomix rmbg-cli @shopify/cli
 ```
 
 ### macOS
@@ -120,7 +193,7 @@ brew install ffmpeg imagemagick postgresql
 
 # Node.js and tools
 brew install node
-npm install -g pnpm wrangler repomix @shopify/cli
+npm install -g pnpm wrangler repomix rmbg-cli @shopify/cli
 ```
 
 ### Windows
@@ -138,7 +211,7 @@ pip install -r requirements.txt
 choco install ffmpeg imagemagick nodejs
 
 # Node.js tools
-npm install -g pnpm wrangler repomix @shopify/cli
+npm install -g pnpm wrangler repomix rmbg-cli @shopify/cli
 ```
 
 ## Testing Dependencies
@@ -222,9 +295,15 @@ pip install google-genai pypdf python-docx markdown Pillow python-dotenv
 ```bash
 # macOS
 brew install ffmpeg imagemagick
+npm install -g rmbg-cli
 
 # Linux
 sudo apt-get install ffmpeg imagemagick
+npm install -g rmbg-cli
+
+# Windows
+choco install ffmpeg imagemagick
+npm install -g rmbg-cli
 ```
 
 **For other skills:**
@@ -258,7 +337,8 @@ pytest .claude/skills/*/scripts/tests/ --cov=.claude/skills --cov-report=html
 ### media-processing
 - FFmpeg must be in PATH
 - ImageMagick must be in PATH
-- Test with: `ffmpeg -version` and `convert -version`
+- RMBG CLI must be installed globally
+- Test with: `ffmpeg -version`, `convert -version`, and `rmbg --version`
 
 ### devops
 - Cloudflare: Requires `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`

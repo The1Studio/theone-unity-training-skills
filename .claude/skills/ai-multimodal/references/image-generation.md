@@ -1,6 +1,6 @@
 # Image Generation Reference
 
-Comprehensive guide for image creation, editing, and composition using Gemini API.
+Comprehensive guide for image creation, editing, and composition using Imagen 4 and Gemini models.
 
 ## Core Capabilities
 
@@ -9,20 +9,78 @@ Comprehensive guide for image creation, editing, and composition using Gemini AP
 - **Multi-Image Composition**: Combine up to 3 images
 - **Iterative Refinement**: Refine images conversationally
 - **Aspect Ratios**: Multiple formats (1:1, 16:9, 9:16, 4:3, 3:4)
-- **Style Control**: Control artistic style and quality
-- **Text in Images**: Limited text rendering (max 25 chars)
+- **Quality Variants**: Standard/Ultra/Fast for different needs
+- **Text in Images**: Limited text rendering (varies by model)
 
-## Model
+## Models
 
-**gemini-2.5-flash-image** - Specialized for image generation
-- Input tokens: 65,536
-- Output tokens: 32,768
-- Knowledge cutoff: June 2025
-- Supports: Text and image inputs, image outputs
+### Imagen 4 (Recommended)
+
+**imagen-4.0-generate-001** - Standard quality, balanced performance
+- Best for: General use, prototyping, iterative workflows
+- Quality: High
+- Speed: Medium (~5-10s per image)
+- Cost: ~$0.02/image (estimated)
+- Output: 1-4 images per request
+- Resolution: 1K or 2K
+- Updated: June 2025
+
+**imagen-4.0-ultra-generate-001** - Maximum quality
+- Best for: Final production, marketing assets, detailed artwork
+- Quality: Ultra (highest available)
+- Speed: Slow (~15-25s per image)
+- Cost: ~$0.04/image (estimated)
+- Output: 1-4 images per request
+- Resolution: 2K preferred
+- Updated: June 2025
+
+**imagen-4.0-fast-generate-001** - Fastest generation
+- Best for: Rapid iteration, bulk generation, real-time use
+- Quality: Good
+- Speed: Fast (~2-5s per image)
+- Cost: ~$0.01/image (estimated)
+- Output: 1-4 images per request
+- Resolution: 1K
+- Updated: June 2025
+
+### Gemini 3 Pro Image (Alternative)
+
+**gemini-3-pro-image-preview** - Conversational image generation
+- Best for: Iterative refinement with natural language editing
+- Quality: High
+- Context: 65k input / 32k output tokens
+- Cost: $2/1M text input, $0.134/image output (resolution-dependent)
+- Unique: Native 4K text rendering, grounded generation
+- Updated: January 2025
+
+### Legacy Models
+
+**gemini-2.5-flash-image** - Legacy image generation
+- Status: Deprecated (use Imagen 4 instead)
+- Still functional for backward compatibility
+- Input: 65,536 tokens
+- Output: 32,768 tokens
+- Cost: $1/1M input
+
+## Model Comparison
+
+| Model | Quality | Speed | Cost | Best For |
+|-------|---------|-------|------|----------|
+| imagen-4.0-ultra | ⭐⭐⭐⭐⭐ | 🐢 Slow | 💰💰 High | Production assets |
+| imagen-4.0-standard | ⭐⭐⭐⭐ | ⚡ Medium | 💰 Medium | General use |
+| imagen-4.0-fast | ⭐⭐⭐ | 🚀 Fast | 💵 Low | Rapid iteration |
+| gemini-3-pro-image | ⭐⭐⭐⭐ | ⚡ Medium | 💰 Medium | Text rendering |
+| gemini-2.5-flash-image | ⭐⭐⭐ | ⚡ Medium | 💵 Low | Legacy (deprecated) |
+
+**Selection Guide**:
+- **Marketing/Production**: Use `imagen-4.0-ultra` for final deliverables
+- **General Development**: Use `imagen-4.0-generate-001` for balanced workflow
+- **Prototyping/Iteration**: Use `imagen-4.0-fast` for quick feedback
+- **Text-Heavy Images**: Use `gemini-3-pro-image` for 4K text rendering
 
 ## Quick Start
 
-### Basic Generation
+### Basic Generation (Imagen 4)
 
 ```python
 from google import genai
@@ -31,21 +89,107 @@ import os
 
 client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
 
-response = client.models.generate_content(
-    model='gemini-2.5-flash-image',
-    contents='A serene mountain landscape at sunset with snow-capped peaks',
-    config=types.GenerateContentConfig(
-        response_modalities=['image'],
-        aspect_ratio='16:9'
+# Standard quality (recommended)
+response = client.models.generate_images(
+    model='imagen-4.0-generate-001',
+    prompt='A serene mountain landscape at sunset with snow-capped peaks',
+    config=types.GenerateImagesConfig(
+        numberOfImages=1,
+        aspectRatio='16:9',
+        imageSize='1K'
     )
 )
 
-# Save image
+# Save images
+for i, generated_image in enumerate(response.generated_images):
+    with open(f'output-{i}.png', 'wb') as f:
+        f.write(generated_image.image.image_bytes)
+```
+
+### Quality Variants
+
+```python
+# Ultra quality (production)
+response = client.models.generate_images(
+    model='imagen-4.0-ultra-generate-001',
+    prompt='Professional product photography of smartphone',
+    config=types.GenerateImagesConfig(
+        numberOfImages=1,
+        imageSize='2K'  # Use 2K for ultra (Standard/Ultra only)
+    )
+)
+
+# Fast generation (iteration)
+# Note: Fast model doesn't support imageSize parameter
+response = client.models.generate_images(
+    model='imagen-4.0-fast-generate-001',
+    prompt='Quick concept sketch of robot character',
+    config=types.GenerateImagesConfig(
+        numberOfImages=4,  # Generate multiple variants (default: 4)
+        aspectRatio='1:1'
+    )
+)
+```
+
+### Legacy Flash Image (Backward Compatibility)
+
+```python
+# Still works but deprecated
+response = client.models.generate_content(
+    model='gemini-2.5-flash-image',
+    contents='A futuristic cityscape',
+    config=types.GenerateContentConfig(
+        response_modalities=['Image'],
+        image_config=types.ImageConfig(
+            aspect_ratio='16:9'
+        )
+    )
+)
+
+# Save from content parts
 for i, part in enumerate(response.candidates[0].content.parts):
     if part.inline_data:
         with open(f'output-{i}.png', 'wb') as f:
             f.write(part.inline_data.data)
 ```
+
+## API Differences
+
+### Imagen 4 vs Flash Image
+
+**Imagen 4** uses `generate_images()`:
+```python
+response = client.models.generate_images(
+    model='imagen-4.0-generate-001',
+    prompt='...',
+    config=types.GenerateImagesConfig(
+        numberOfImages=1,
+        aspectRatio='16:9',
+        imageSize='1K'  # Standard/Ultra only
+    )
+)
+# Access: response.generated_images[0].image.image_bytes
+```
+
+**Flash Image** uses `generate_content()`:
+```python
+response = client.models.generate_content(
+    model='gemini-2.5-flash-image',
+    contents='...',
+    config=types.GenerateContentConfig(
+        response_modalities=['Image'],
+        image_config=types.ImageConfig(...)
+    )
+)
+# Access: response.candidates[0].content.parts[0].inline_data.data
+```
+
+**Key Differences**:
+1. Different method: `generate_images()` vs `generate_content()`
+2. Different config: `GenerateImagesConfig` (camelCase params) vs `GenerateContentConfig`
+3. Parameter names: `prompt` vs `contents`, `numberOfImages` (camelCase) vs `number_of_images` (snake_case)
+4. Response structure: `response.generated_images[i].image.image_bytes` vs `response.candidates[0].content.parts`
+5. Fast model limitation: No `imageSize` parameter support
 
 ## Aspect Ratios
 
@@ -515,13 +659,20 @@ if len(prompt) > 1000:
 
 ## Limitations
 
+### Imagen 4 Constraints
+- **Language**: English prompts only
+- **Prompt length**: Maximum 480 tokens
+- **Output**: 1-4 images per request
+- **Watermark**: All images include SynthID watermark
+- **Fast model**: No `imageSize` parameter support (fixed resolution)
+- **Text rendering**: Limited to ~25 characters for optimal results
+- **Regional restrictions**: Child images restricted in EEA, CH, UK
+- **Cannot replicate**: Specific people or copyrighted characters
+
+### General Limitations
 - Maximum 3 input images for composition
-- Text rendering limited (25 chars max)
 - No video or animation generation
-- Regional restrictions (child images in EEA, CH, UK)
-- Optimal language support: English, Spanish (Mexico), Japanese, Mandarin, Hindi
 - No real-time generation
-- Cannot perfectly replicate specific people or copyrighted characters
 
 ## Troubleshooting
 
@@ -556,3 +707,16 @@ config = types.GenerateContentConfig(
 The `response_modalities` parameter expects capital case values:
 - ✅ Correct: `['Image']`, `['Text']`, `['Image', 'Text']`
 - ❌ Wrong: `['image']`, `['text']`
+
+---
+
+## Related References
+
+**Current**: Image Generation
+
+**Related Capabilities**:
+- [Image Understanding](./vision-understanding.md) - Analyzing and editing reference images
+- [Video Generation](./video-generation.md) - Creating animated video content
+- [Audio Processing](./audio-processing.md) - Text-to-speech for multimedia
+
+**Back to**: [AI Multimodal Skill](../SKILL.md)
